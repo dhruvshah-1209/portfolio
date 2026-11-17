@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investates demo — AI Real Estate Investment Advisor</title>
+<meta name="description" content="Analyze any US property in seconds: cash flow, cap rate, 5-year IRR, AI investment verdict, and real market data from RentCast, FRED, Census, FHFA, FEMA, FBI, and HUD.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%231D9E75'/%3E%3Cpath d='M5 17L9.5 11L13.5 14.5L19 6' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='19' cy='6' r='1.8' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/@tabler/icons-webfont/dist/tabler-icons.min.css">
+<style>
+:root{
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f6f7;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9ca3af;
+  --color-border-primary: #d1d5db;
+  --color-border-secondary: #d1d5db;
+  --color-border-tertiary: #e5e7eb;
+  --border-radius-md: 6px;
+  --border-radius-lg: 10px;
+}
+html,body{margin:0;padding:0;background:var(--color-background-secondary);font-family:var(--font-sans);}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+</style>
+</head>
+<body>
+<script>
+  // sendPrompt() is a Cowork-artifact-only helper used by a couple of demo
+  // buttons in this prototype (unrelated to the RentCast integration). Stub
+  // it out here so those buttons don't throw in a plain browser tab.
+  window.sendPrompt = window.sendPrompt || function(text){ console.log('[sendPrompt stub]', text); };
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.app{font-family:var(--font-sans);font-size:13px;color:var(--color-text-primary)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary)}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-mark{width:24px;height:24px;background:#1D9E75;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo-mark svg{width:12px;height:12px}
+.logo-name{font-size:15px;font-weight:500;letter-spacing:-.01em}
+.logo-name span{color:#1D9E75}
+.nav{display:flex;gap:2px}
+.nb{font-size:12px;padding:5px 11px;border-radius:var(--border-radius-md);border:none;background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.nb:hover{background:var(--color-background-secondary)}
+.nb.on{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
+.tbr{display:flex;align-items:center;gap:8px}
+.zchip{display:inline-flex;align-items:center;gap:4px;background:#E6F1FB;color:#0C447C;border-radius:var(--border-radius-md);padding:3px 9px;font-size:11px;font-weight:500}
+.btnp{background:#1D9E75;color:white;border:none;padding:6px 13px;border-radius:var(--border-radius-md);font-size:12px;cursor:pointer;font-weight:500}
+.btnp:hover{background:#0F6E56}
+.layout{display:grid;grid-template-columns:240px 1fr;min-height:640px}
+.sidebar{border-right:0.5px solid var(--color-border-tertiary);padding:14px;background:var(--color-background-secondary);display:flex;flex-direction:column;gap:8px}
+.slbl{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+.ig{display:flex;flex-direction:column;gap:3px}
+.ig label{font-size:11px;color:var(--color-text-secondary)}
+.ig input,.ig select{font-size:12px;padding:6px 9px}
+.addr-wrap{position:relative}
+.addr-wrap input{width:100%;padding-right:32px}
+.fetch-btn{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#1D9E75;font-size:15px;padding:0}
+.propcard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px;display:none;gap:8px;flex-direction:column}
+.propcard.show{display:flex}
+.pc-header{display:flex;justify-content:space-between;align-items:flex-start}
+.pc-addr{font-size:12px;font-weight:500;color:var(--color-text-primary);line-height:1.3}
+.pc-price{font-size:14px;font-weight:500;color:#1D9E75}
+.pc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.pc-item{font-size:11px;color:var(--color-text-secondary)}
+.pc-item span{color:var(--color-text-primary);font-weight:500}
+.anabtn{background:#1D9E75;color:white;border:none;padding:9px 0;border-radius:var(--border-radius-md);font-size:13px;font-weight:500;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:4px}
+.anabtn:hover{background:#0F6E56}
+.content{display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);padding:0 18px;background:var(--color-background-primary)}
+.tab{font-size:12px;padding:10px 12px;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);background:none;border-top:none;border-left:none;border-right:none}
+.tab.on{color:#1D9E75;border-bottom-color:#1D9E75;font-weight:500}
+.tc{padding:14px 18px;display:none}
+.tc.on{display:block}
+.deal-score-banner{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.score-ring{width:64px;height:64px;flex-shrink:0;position:relative}
+.score-ring svg{width:64px;height:64px}
+.score-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-size:18px;font-weight:500;line-height:1}
+.score-ltr{font-size:10px;font-weight:500}
+.score-info{flex:1}
+.score-rec{font-size:16px;font-weight:500;margin-bottom:3px}
+.score-sub{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.score-conf{font-size:11px;color:var(--color-text-tertiary);margin-top:4px}
+.mrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.mc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.mc-lbl{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.mc-val{font-size:18px;font-weight:500}
+.mc-sub{font-size:10px;color:var(--color-text-tertiary);margin-top:1px}
+.mc-conf{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+.mc.pos .mc-val{color:#1D9E75}
+.mc.neg .mc-val{color:#D85A30}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px;margin-bottom:10px}
+.card-title{font-size:12px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dr{display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.dr:last-child{border-bottom:none}
+.dk{color:var(--color-text-secondary)}
+.dv{font-weight:500}
+.ai-box{background:var(--color-background-secondary);border-left:2px solid #1D9E75;border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;padding:10px 12px;font-size:12px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:12px}
+.ai-lbl{font-size:10px;font-weight:500;color:#1D9E75;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}
+.badge{display:inline-flex;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:500}
+.bg{background:#E1F5EE;color:#085041}
+.ba{background:#FAEEDA;color:#633806}
+.br{background:#FCEBEB;color:#791F1F}
+.bb{background:#E6F1FB;color:#0C447C}
+.bp{background:#EEEDFE;color:#3C3489}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.pl{font-size:11px;color:var(--color-text-secondary);width:140px;flex-shrink:0}
+.pw{flex:1;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden}
+.pf{height:5px;border-radius:3px}
+.pp{font-size:11px;font-weight:500;width:30px;text-align:right}
+.pc2{font-size:10px;color:var(--color-text-tertiary);width:64px;text-align:right}
+.exit-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 14px}
+.exit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.exit-name{font-size:12px;font-weight:500}
+.exit-score{font-size:18px;font-weight:500}
+.exit-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.5}
+.exit-bar{height:4px;border-radius:2px;margin-top:8px}
+.recommended-tag{font-size:10px;background:#E1F5EE;color:#085041;padding:2px 7px;border-radius:99px;font-weight:500}
+.demand-stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;text-align:center}
+.demand-num{font-size:20px;font-weight:500;color:var(--color-text-primary)}
+.demand-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.demand-conf{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+.prob-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:12px}
+.prob-row:last-child{border-bottom:none}
+.prob-bar-wrap{width:80px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin:0 8px}
+.prob-bar{height:5px;border-radius:3px;background:#1D9E75}
+.investor-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;margin-bottom:7px}
+.inv-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.inv-name{font-size:12px;font-weight:500}
+.inv-match{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)}
+.inv-match-bar{width:60px;height:5px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden}
+.inv-match-fill{height:5px;border-radius:3px;background:#1D9E75}
+.inv-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.mkt-city{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.mkt-city-info{}
+.mkt-city-name{font-size:12px;font-weight:500}
+.mkt-city-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.mkt-city-stats{display:flex;gap:12px;align-items:center}
+.mkt-stat{text-align:right}
+.mkt-stat-val{font-size:13px;font-weight:500;color:#1D9E75}
+.mkt-stat-lbl{font-size:10px;color:var(--color-text-tertiary)}
+.conf-pill{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-radius:99px;padding:2px 7px}
+.spin{width:24px;height:24px;border:2px solid var(--color-border-tertiary);border-top-color:#1D9E75;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:48px 20px;color:var(--color-text-tertiary);font-size:13px}
+.load-state{text-align:center;padding:44px 20px}
+.chart-wrap{position:relative;width:100%;height:160px}
+.off-market-badge{display:inline-flex;align-items:center;gap:4px;background:#FAEEDA;color:#633806;border-radius:99px;padding:2px 8px;font-size:10px;font-weight:500}
+.site-footer{padding:12px 18px;border-top:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);font-size:10px;color:var(--color-text-tertiary);line-height:1.6}
+/* Responsive: the app previously had no breakpoints at all — on a narrow
+   window the 240px+1fr grid and 3-4 column stat rows just crushed. */
+@media(max-width:860px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{border-right:none;border-bottom:0.5px solid var(--color-border-tertiary)}
+  .topbar{flex-wrap:wrap;gap:8px}
+  .tabs{overflow-x:auto;white-space:nowrap}
+  .mrow{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g3{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr !important}
+  .deal-score-banner{flex-direction:column;align-items:flex-start;gap:10px}
+}
+@media(max-width:480px){
+  .mrow{grid-template-columns:1fr}
+  .tbr{width:100%;justify-content:flex-start}
+}
+</style>
+
+
+<div id="demoBar" style="font-family:var(--font-sans);background:#0A0A0C;color:#F5F3EC;padding:9px 14px;font-size:12px;display:flex;gap:10px 14px;align-items:center;flex-wrap:wrap;line-height:1.4">
+  <a href="../../#work" target="_top" style="color:#F5F3EC;text-decoration:none;border:1px solid rgba(245,243,236,.4);border-radius:5px;padding:4px 9px;white-space:nowrap">&larr; Dhruv's portfolio</a>
+  <span><b style="color:#FFE23D">Demo mode.</b> This is the real Investates interface running on data the app recorded on Aug 30, 2026. No live lookups; AI write-ups are saved samples.</span>
+  <span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">Sample properties:
+    <button onclick="demoPick('960 Delhi Ave, Cincinnati, OH 45204')" style="font:inherit;cursor:pointer;background:#1D9E75;color:#fff;border:0;border-radius:5px;padding:4px 9px">960 Delhi Ave, Cincinnati</button>
+    <button onclick="demoPick('40 Pinehurst Ave, Apt 2D, New York, NY 10033')" style="font:inherit;cursor:pointer;background:#1D9E75;color:#fff;border:0;border-radius:5px;padding:4px 9px">40 Pinehurst Ave, New York</button>
+  </span>
+</div>
+<div id="demoToast" role="status" style="display:none;position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9999;max-width:min(520px,92vw);background:#0A0A0C;color:#F5F3EC;font-family:var(--font-sans);font-size:13px;line-height:1.45;padding:12px 16px;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.35)"></div>
+<h2 class="sr-only">Investates — AI real estate investment advisor platform</h2>
+
+<!-- Sign-in gate. Shown until /api/auth/me confirms a session; the app below
+     stays hidden so a signed-out visitor never sees another user's view. -->
+<div id="authGate" style="display:none;min-height:520px;align-items:center;justify-content:center;padding:40px 20px;font-family:var(--font-sans)">
+  <div style="width:100%;max-width:360px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:24px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <div style="width:24px;height:24px;background:#1D9E75;border-radius:6px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 12 12" fill="none" style="width:12px;height:12px"><path d="M1 10L4 6L7 8.5L11 2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="2" r="1.1" fill="white"/></svg></div>
+      <div style="font-size:15px;font-weight:500">Invest<span style="color:#1D9E75">ates</span></div>
+    </div>
+    <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:16px">Sign in to analyze properties and keep your portfolio.</div>
+    <div class="ig" style="margin-bottom:8px">
+      <label for="authEmail">Email</label>
+      <input type="email" id="authEmail" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <div class="ig" style="margin-bottom:12px">
+      <label for="authPassword">Password</label>
+      <input type="password" id="authPassword" autocomplete="current-password" placeholder="At least 10 characters" onkeydown="if(event.key==='Enter')doAuth()">
+    </div>
+    <button class="anabtn" id="authSubmit" onclick="doAuth()">Sign in</button>
+    <div id="authError" style="display:none;font-size:11px;color:#D85A30;margin-top:8px"></div>
+    <div style="font-size:11px;color:var(--color-text-secondary);margin-top:12px;text-align:center">
+      <span id="authToggleText">Don't have an account?</span>
+      <a href="#" id="authToggle" style="color:#1D9E75;text-decoration:none;font-weight:500" onclick="toggleAuthMode(event)">Create one</a>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" style="display:none">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-mark"><svg viewBox="0 0 12 12" fill="none"><path d="M1 10L4 6L7 8.5L11 2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="2" r="1.1" fill="white"/></svg></div>
+      <div class="logo-name">Invest<span>ates</span></div>
+    </div>
+    <div class="nav">
+      <button class="nb on" onclick="nav('analyze',this)">Analyze</button>
+      <button class="nb" onclick="nav('nearby',this)">Nearby</button>
+      <button class="nb" onclick="nav('portfolio',this)">Portfolio</button>
+      <button class="nb" onclick="nav('market',this)">Market</button>
+    </div>
+    <div class="tbr">
+      <span class="zchip" id="rcChip" title="Status updates after your first property fetch"><i class="ti ti-plug" aria-hidden="true" style="font-size:11px"></i> RentCast</span>
+      <button class="btnp" onclick="goAnalyze()">+ Analyze a property</button>
+      <span id="userEmail" style="font-size:11px;color:var(--color-text-secondary)"></span>
+      <button class="nb" onclick="doLogout()" title="Sign out" style="font-size:11px">Sign out</button>
+    </div>
+  </div>
+
+  <div class="layout" id="mainLayout">
+    <div class="sidebar" id="sidebarEl">
+      <div class="slbl">Property lookup</div>
+      <div class="ig">
+        <label>Property address</label>
+        <div class="addr-wrap">
+          <input type="text" id="addrInput" value="960 Delhi Ave, Cincinnati, OH 45204" placeholder="e.g. 123 Main St, Indianapolis IN 46220" onkeydown="if(event.key==='Enter')fetchProperty()">
+          <button class="fetch-btn" onclick="fetchProperty()" title="Fetch property data"><i class="ti ti-search" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <button class="anabtn" id="fetchBtn" onclick="fetchProperty()" style="background:var(--color-background-primary);color:#1D9E75;border:0.5px solid #1D9E75">
+        <i class="ti ti-database" aria-hidden="true" style="font-size:14px"></i> Fetch property data
+      </button>
+
+      <div class="propcard" id="propCard">
+        <div class="pc-header">
+          <div>
+            <div class="pc-addr" id="pcAddr">—</div>
+            <div style="font-size:11px;color:var(--color-text-secondary);margin-top:2px" id="pcType">—</div>
+          </div>
+          <div class="pc-price" id="pcPrice">—</div>
+        </div>
+        <div class="pc-grid" id="pcGrid"></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="pcBadges"></div>
+      </div>
+
+      <div class="ig" id="priceOverrideWrap" style="display:none">
+        <label>Purchase price (editable)</label>
+        <input type="number" id="priceInput" min="1" step="1000" onchange="rerunIfAnalyzed()">
+        <div id="priceSourceNote" style="font-size:10px;color:var(--color-text-tertiary);margin-top:1px">—</div>
+      </div>
+
+      <div class="slbl" style="margin-top:4px">Strategy</div>
+      <div class="ig">
+        <label>Investment goal</label>
+        <select id="igoal" onchange="rerunIfAnalyzed()"><option>Rental income</option><option>Fix & flip</option><option>Buy & hold</option><option>Short-term rental</option><option>BRRRR</option></select>
+      </div>
+      <div class="ig">
+        <label>Hold period</label>
+        <select id="hperiod" onchange="rerunIfAnalyzed()"><option>5 years</option><option>3 years</option><option>7 years</option><option>10 years</option></select>
+      </div>
+      <div class="ig">
+        <label>Down payment override (%)</label>
+        <input type="number" id="dpct" value="20" min="3" max="100" onchange="rerunIfAnalyzed()">
+      </div>
+      <button class="anabtn" id="anaBtn" onclick="runAnalysis()">
+        <i class="ti ti-brain" aria-hidden="true" style="font-size:14px"></i> Run AI analysis
+      </button>
+      <button class="anabtn" id="addPortfolioBtn" style="display:none;margin-top:8px;background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)" onclick="addToPortfolio()">
+        <i class="ti ti-briefcase" aria-hidden="true" style="font-size:14px"></i> Add to portfolio
+      </button>
+      <div id="addPortfolioNote" style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px;display:none"></div>
+    </div>
+
+    <div class="content" id="contentEl">
+      <div id="portfolioPanel" style="display:none;padding:16px 18px">
+        <div style="font-size:13px;font-weight:500;margin-bottom:12px">Portfolio <span style="font-weight:400;color:var(--color-text-secondary);font-size:12px;margin-left:4px" id="portfolioCount">—</span></div>
+        <div id="portfolioEmpty" class="empty" style="padding:36px">
+          <i class="ti ti-briefcase" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>
+          No properties saved yet. Run an analysis on the Analyze tab, then click "Add to portfolio."
+        </div>
+        <div id="portfolioBody" style="display:none">
+          <div class="mrow" id="portfolioStats"></div>
+          <div class="card" style="padding:0;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">
+              <colgroup><col style="width:155px"><col style="width:75px"><col style="width:80px"><col style="width:65px"><col style="width:65px"><col style="width:65px"><col style="width:80px"><col style="width:55px"></colgroup>
+              <thead><tr style="background:var(--color-background-secondary)">
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Property</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Price</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Cashflow</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">CoC</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">5-yr IRR</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Score</th>
+                <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Added</th>
+                <th style="border-bottom:0.5px solid var(--color-border-tertiary)"></th>
+              </tr></thead>
+              <tbody id="portfolioRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="marketPanel" style="display:none;padding:16px 18px">
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:10px;padding:6px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)">
+          <strong>Top investment cities and Fastest-growing ZIPs below are real data</strong> (FHFA appreciation, FBI crime, Census population/income) for a fixed curated list of markets — not derived from anything you've searched, and not a substitute for a real per-property analysis. The "Market intelligence" summary and the Off-market opportunity scanner further down are still illustrative sample content — there's no integrated data source for cross-market narrative summaries or off-market leads.
+        </div>
+        <div class="ai-box" style="margin-bottom:12px">
+          <div class="ai-lbl" id="marketIntelLbl"><i class="ti ti-globe" aria-hidden="true" style="font-size:10px"></i> Market intelligence <span style="font-weight:400;opacity:0.7">(illustrative sample — not live analysis)</span></div>
+          <span id="marketIntelText">Indianapolis, Midwest markets, and Sun Belt metros are showing the strongest risk-adjusted returns. Cap rate compression is easing in secondary markets. Institutional buyer activity is up 14% YoY in the $200–500k range.</span>
+        </div>
+        <div class="g2" style="margin-bottom:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+          <div style="min-width:0">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap"><i class="ti ti-trophy" aria-hidden="true" style="color:#BA7517;font-size:14px"></i> Top investment cities</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Fixed list · ranked by real FHFA appreciation + FBI crime data</div>
+            <div id="marketCitiesList"><div class="empty" style="padding:20px;font-size:11px">Loading…</div></div>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:12px;font-weight:500;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap"><i class="ti ti-trending-up" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> Fastest-growing ZIPs</div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Fixed list · real Census population growth, not YoY</div>
+            <div id="marketZipsList"><div class="empty" style="padding:20px;font-size:11px">Loading…</div></div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap"><i class="ti ti-radar" aria-hidden="true" style="color:#D85A30;font-size:14px"></i> Off-market opportunity scanner</div>
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:8px">Illustrative</div>
+        <div class="card" style="padding:0">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed">
+            <colgroup><col style="width:160px"><col style="width:80px"><col style="width:80px"><col style="width:80px"><col style="width:90px"><col style="width:110px"></colgroup>
+            <thead><tr style="background:var(--color-background-secondary)">
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Address</th>
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Est. value</th>
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Below mkt</th>
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Opportunity</th>
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Signal</th>
+              <th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.05em;border-bottom:0.5px solid var(--color-border-tertiary)">Type</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-weight:500">3104 Sunset Blvd</div><div style="font-size:10px;color:var(--color-text-secondary)">46220, Indianapolis</div></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">$342k</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:#1D9E75;font-weight:500">−12%</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="badge bg">High</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">Pre-foreclosure</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="off-market-badge">Off-market</span></td></tr>
+              <tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-weight:500">7721 Oak Ridge Ct</div><div style="font-size:10px;color:var(--color-text-secondary)">46032, Carmel</div></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">$478k</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:#1D9E75;font-weight:500">−8%</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="badge bg">High</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">Estate sale</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="off-market-badge">Off-market</span></td></tr>
+              <tr><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-weight:500">1455 Maple Park Dr</div><div style="font-size:10px;color:var(--color-text-secondary)">46038, Fishers</div></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">$298k</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:#1D9E75;font-weight:500">−6%</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="badge ba">Medium</span></td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">Tired landlord</td><td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><span class="off-market-badge">Off-market</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px">Illustrative sample data, not a live feed. Always verify directly with owners.</div>
+      </div>
+
+      <div id="nearbyPanel" style="display:none;padding:16px 18px">
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px">Top-rated listings near you</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:12px;max-width:640px">
+          Live active sale listings from RentCast, ranked by a <b>screening score</b> — relative price-per-sqft within these results plus days on market. It's a shortlist heuristic, <b>not</b> an investment analysis (it knows nothing about rent or cash flow). Click "Analyze" on any listing for the real thing.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+          <button class="btnp" onclick="nearbySearchGeo()"><i class="ti ti-current-location" aria-hidden="true" style="font-size:12px"></i> Use my location</button>
+          <span style="font-size:11px;color:var(--color-text-tertiary)">or</span>
+          <input type="text" id="nearbyZip" placeholder="ZIP code" value="45204" style="width:90px;font-size:12px;padding:6px 9px" onkeydown="if(event.key==='Enter')nearbySearchZip()">
+          <select id="nearbyRadius" style="font-size:12px;padding:6px 9px"><option value="2">2 mi radius</option><option value="5" selected>5 mi radius</option><option value="10">10 mi radius</option><option value="25">25 mi radius</option></select>
+          <button class="btnp" style="background:var(--color-background-primary);color:var(--color-text-primary);border:0.5px solid var(--color-border-secondary)" onclick="nearbySearchZip()">Search ZIP</button>
+        </div>
+        <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:12px">Each new search uses 1 RentCast request (results cached ~24h; repeat searches of the same area are free). Radius applies to location searches only.</div>
+        <div id="nearbyStatus" style="display:none;font-size:12px;color:var(--color-text-secondary);padding:20px;text-align:center"></div>
+        <div id="nearbyMeta" style="display:none;font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px"></div>
+        <div id="nearbyResults"></div>
+      </div>
+
+      <div id="analysisPanel">
+        <div class="tabs">
+          <button class="tab on" onclick="switchTab('ov',this)">Overview</button>
+          <button class="tab" onclick="switchTab('cf',this)">Cash flow</button>
+          <button class="tab" onclick="switchTab('demand',this)">Demand</button>
+          <button class="tab" onclick="switchTab('exit',this)">Exit strategies</button>
+          <button class="tab" onclick="switchTab('tax',this)">Tax & growth</button>
+          <button class="tab" onclick="switchTab('investors',this)">Investors</button>
+        </div>
+
+        <div class="tc on" id="ovTab">
+          <div id="emptyEl" class="empty"><i class="ti ti-building-estate" aria-hidden="true" style="font-size:26px;display:block;margin-bottom:8px;color:var(--color-border-secondary)"></i>
+            <div style="font-weight:500;color:var(--color-text-secondary);margin-bottom:6px">Analyze any US property in three steps</div>
+            <div style="font-size:12px;max-width:420px;margin:0 auto;text-align:left;line-height:1.8">
+              <div><span style="color:#1D9E75;font-weight:500">1.</span> Enter a property address in the sidebar (or keep the sample one)</div>
+              <div><span style="color:#1D9E75;font-weight:500">2.</span> Click the arrow to fetch live data — value, rent estimate, listing status</div>
+              <div><span style="color:#1D9E75;font-weight:500">3.</span> Hit <b>Run AI analysis</b> for cash flow, cap rate, 5-yr IRR, and an AI verdict</div>
+            </div></div>
+          <div id="loadEl" class="load-state" style="display:none"><div class="spin"></div><span style="font-size:12px;color:var(--color-text-secondary)">Fetching property data & running AI deal analysis…</span></div>
+          <div id="resultsEl" style="display:none">
+            <div class="deal-score-banner" id="dealBanner">
+              <div class="score-ring">
+                <svg viewBox="0 0 64 64" role="img" aria-label="Deal score ring"><circle cx="32" cy="32" r="26" fill="none" stroke-width="5" id="scoreTrack"/><circle cx="32" cy="32" r="26" fill="none" stroke-width="5" stroke-linecap="round" id="scoreArc" transform="rotate(-90 32 32)"/></svg>
+                <div class="score-inner"><div class="score-num" id="scoreNum">—</div><div class="score-ltr" id="scoreLtr" style="color:#1D9E75">—</div></div>
+              </div>
+              <div class="score-info">
+                <div class="score-rec" id="scoreRec">—</div>
+                <div class="score-sub" id="scoreSub">—</div>
+                <div class="score-conf" id="scoreConf">—</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+                <div id="scoreTags"></div>
+              </div>
+            </div>
+            <div class="ai-box"><div class="ai-lbl"><i class="ti ti-sparkles" aria-hidden="true" style="font-size:10px"></i> Investates AI verdict</div><span id="aiSum"></span></div>
+            <div class="mrow">
+              <div class="mc" id="mcCF"><div class="mc-lbl">Monthly cashflow</div><div class="mc-val" id="vCF">—</div><div class="mc-sub">after all costs</div><div class="mc-conf" id="confCF">—</div></div>
+              <div class="mc" id="mcCoC"><div class="mc-lbl">Cash-on-cash</div><div class="mc-val" id="vCoC">—</div><div class="mc-sub">annual return</div><div class="mc-conf" id="confCoC">—</div></div>
+              <div class="mc" id="mcCap"><div class="mc-lbl">Cap rate</div><div class="mc-val" id="vCap">—</div><div class="mc-sub">net operating inc.</div></div>
+              <div class="mc" id="mcIRR"><div class="mc-lbl" id="irrLbl">5-yr IRR</div><div class="mc-val" id="vIRR">—</div><div class="mc-sub">projected</div><div class="mc-conf" id="confIRR">—</div></div>
+            </div>
+            <div class="g2">
+              <div class="card">
+                <div class="card-title"><i class="ti ti-building" aria-hidden="true" style="color:#185FA5;font-size:14px"></i> Property data (RentCast)</div>
+                <div class="dr"><span class="dk">Value estimate</span><span class="dv" id="zEst">—</span></div>
+                <div class="dr"><span class="dk">Listing price</span><span class="dv" id="zList">—</span></div>
+                <div class="dr"><span class="dk">Rent estimate</span><span class="dv" id="zRent">—</span></div>
+                <div class="dr"><span class="dk">Beds / baths</span><span class="dv" id="zBed">—</span></div>
+                <div class="dr"><span class="dk">Sq footage</span><span class="dv" id="zSqft">—</span></div>
+                <div class="dr"><span class="dk">Days on market</span><span class="dv" id="zDom">—</span></div>
+                <div class="dr"><span class="dk">Price / sqft</span><span class="dv" id="zPsf">—</span></div>
+                <div class="dr"><span class="dk">Neighborhood trend</span><span class="dv" id="zTrend">—</span></div>
+              </div>
+              <div class="card">
+                <div class="card-title"><i class="ti ti-home-dollar" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> Financing</div>
+                <div class="dr"><span class="dk">Purchase price</span><span class="dv" id="fPrice">—</span></div>
+                <div class="dr"><span class="dk">Down payment</span><span class="dv" id="fDown">—</span></div>
+                <div class="dr"><span class="dk">Loan amount</span><span class="dv" id="fLoan">—</span></div>
+                <div class="dr"><span class="dk">Est. mortgage rate</span><span class="dv" id="fRate">—</span></div>
+                <div class="dr"><span class="dk">Monthly mortgage</span><span class="dv" id="fMort">—</span></div>
+                <div class="dr"><span class="dk">Property type</span><span class="dv" id="fType">—</span></div>
+                <div class="dr"><span class="dk">Year built</span><span class="dv" id="fYear">—</span></div>
+                <div class="dr"><span class="dk">Price vs value estimate</span><span class="dv" id="fVsZ">—</span></div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:10px">
+              <div class="card-title"><i class="ti ti-home-search" aria-hidden="true" style="color:#7F77DD;font-size:14px"></i> Comparable sales <span style="font-weight:400;font-size:10px;color:var(--color-text-tertiary)">(top matches from RentCast's value estimate)</span></div>
+              <div id="compsBody"><div class="dr"><span class="dk">Run analysis to load</span><span class="dv">—</span></div></div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px">The same comps RentCast used to compute the value estimate above, ranked by similarity. Distance in miles from the subject property.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tc" id="cfTab">
+          <div id="cfEmpty" class="empty" style="padding:36px"><i class="ti ti-report-money" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>Run analysis first.</div>
+          <div id="cfResults" style="display:none">
+            <div class="card">
+              <div class="card-title"><i class="ti ti-report-money" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> Monthly income & expenses</div>
+              <div class="dr"><span class="dk">Gross rent (RentCast estimate)</span><span class="dv" id="cfRent">—</span></div>
+              <div class="dr"><span class="dk" id="cfVacLbl">Vacancy</span><span class="dv" id="cfVac" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr"><span class="dk">Property mgmt (8%)</span><span class="dv" id="cfMgmt" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr"><span class="dk" id="cfTaxLbl">Property tax</span><span class="dv" id="cfTax" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr" id="cfHoaRow" style="display:none"><span class="dk">HOA fee (county record)</span><span class="dv" id="cfHoa" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr"><span class="dk">Insurance (est. 0.5%/yr)</span><span class="dv" id="cfIns" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr"><span class="dk">Maintenance (1%/yr)</span><span class="dv" id="cfMaint" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr"><span class="dk">Mortgage payment</span><span class="dv" id="cfMortRow" style="color:var(--color-text-secondary)">—</span></div>
+              <div class="dr" style="border-top:1px solid var(--color-border-tertiary);margin-top:3px;padding-top:7px"><span class="dk" style="font-weight:500">Net monthly cashflow</span><span class="dv" id="cfNet" style="font-size:16px">—</span></div>
+            </div>
+            <div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;display:flex;align-items:center;gap:5px">
+              <i class="ti ti-info-circle" aria-hidden="true"></i> Rent is a RentCast estimate; vacancy (5%), mgmt (8%), tax (1.1%), maintenance (1%/yr), and insurance (0.5%/yr) are standard rule-of-thumb assumptions, not this property's actual costs.
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-chart-line" aria-hidden="true" style="color:#185FA5;font-size:14px"></i> <span id="projTitle">5-year projection</span></div>
+              <div class="chart-wrap"><canvas id="cfChart" role="img" aria-label="Annual cash flow projection bar chart over the selected hold period">Projected annual cash flow over the hold period.</canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tc" id="demandTab">
+          <div id="demEmpty" class="empty" style="padding:36px"><i class="ti ti-users" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>Run analysis first.</div>
+          <div id="demResults" style="display:none">
+            <div class="ai-box"><div class="ai-lbl"><i class="ti ti-users" aria-hidden="true" style="font-size:10px"></i> Demand forecast</div><span id="demSum">—</span></div>
+            <div class="g3" style="margin-bottom:12px">
+              <div class="demand-stat"><div class="demand-num" id="dOwners">—</div><div class="demand-lbl">Owner households (ZIP)</div><div class="demand-conf" id="dOwnersConf">—</div></div>
+              <div class="demand-stat"><div class="demand-num" id="dRenters">—</div><div class="demand-lbl">Renter households (ZIP)</div><div class="demand-conf" id="dRentersConf">—</div></div>
+              <div class="demand-stat"><div class="demand-num" id="dIncome">—</div><div class="demand-lbl">Median household income</div><div class="demand-conf" id="dIncomeConf">—</div></div>
+            </div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="card">
+                <div class="card-title"><i class="ti ti-home-check" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> Sale probability</div>
+                <div class="prob-row"><span class="dk">Within 30 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="ps30"></div></div></div><span class="dv" id="ps30v">—</span></div>
+                <div class="prob-row"><span class="dk">Within 60 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="ps60"></div></div></div><span class="dv" id="ps60v">—</span></div>
+                <div class="prob-row"><span class="dk">Within 90 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="ps90"></div></div></div><span class="dv" id="ps90v">—</span></div>
+                <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="psNote">Modeled estimate</div>
+
+              </div>
+              <div class="card">
+                <div class="card-title"><i class="ti ti-key" aria-hidden="true" style="color:#7F77DD;font-size:14px"></i> Rental probability</div>
+                <div class="prob-row"><span class="dk">Within 7 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="pr7"></div></div></div><span class="dv" id="pr7v">—</span></div>
+                <div class="prob-row"><span class="dk">Within 14 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="pr14"></div></div></div><span class="dv" id="pr14v">—</span></div>
+                <div class="prob-row"><span class="dk">Within 30 days</span><div><div class="prob-bar-wrap"><div class="prob-bar" id="pr30"></div></div></div><span class="dv" id="pr30v">—</span></div>
+                <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="prNote">Modeled estimate</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-chart-donut" aria-hidden="true" style="color:#185FA5;font-size:14px"></i> Neighborhood composition (Census)</div>
+              <div id="segBars"></div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="segNote">—</div>
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-map-pin" aria-hidden="true" style="color:#378ADD;font-size:14px"></i> Nearby amenities <span style="font-weight:400;font-size:10px;color:var(--color-text-tertiary)" id="amenScore"></span></div>
+              <div id="amenBody"><div class="dr"><span class="dk">Run analysis to load</span><span class="dv">—</span></div></div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="amenNote">—</div>
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-building-bank" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> HUD Fair Market Rent</div>
+              <div id="hudFmrBody">
+                <div class="dr"><span class="dk">Run analysis to load</span><span class="dv">—</span></div>
+              </div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="hudFmrNote">HUD's 40th-percentile Section 8 benchmark rent for the area — a floor/sanity-check reference, not a market-rate estimate. Real data, matched by metro/county.</div>
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-building-skyscraper" aria-hidden="true" style="color:#D85A30;font-size:14px"></i> Institutional investor demand <span style="font-weight:400;font-size:10px;color:var(--color-text-tertiary)">(illustrative)</span></div>
+              <div class="dr"><span class="dk">Institutional interest level</span><span class="dv" id="instLevel">—</span></div>
+              <div class="dr"><span class="dk">Active iBuyers in area</span><span class="dv" id="instIbuyers">—</span></div>
+              <div class="dr"><span class="dk">Avg institutional offer premium</span><span class="dv" id="instPrem">—</span></div>
+              <div class="dr"><span class="dk">Best candidate for portfolio sale</span><span class="dv" id="instPortfolio">—</span></div>
+              <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px">Illustrative sample data — there's no integrated iBuyer/institutional-activity data source yet</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tc" id="exitTab">
+          <div id="exitEmpty" class="empty" style="padding:36px"><i class="ti ti-door-exit" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>Run analysis first.</div>
+          <div id="exitResults" style="display:none">
+            <div class="ai-box"><div class="ai-lbl"><i class="ti ti-route" aria-hidden="true" style="font-size:10px"></i> AI exit strategy recommendation</div><span id="exitAI">—</span></div>
+            <div class="g2" id="exitGrid"></div>
+            <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:8px">All strategies are computed from this property's price, rent, and value estimates plus rule-of-thumb assumptions (rehab budgets, STR multipliers) — directional comparisons, not underwritten projections.</div>
+          </div>
+        </div>
+
+        <div class="tc" id="taxTab">
+          <div id="taxEmpty" class="empty" style="padding:36px"><i class="ti ti-receipt-tax" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>Run analysis first.</div>
+          <div id="taxResults" style="display:none">
+            <div class="g2">
+              <div class="card">
+                <div class="card-title"><i class="ti ti-receipt-tax" aria-hidden="true" style="color:#D85A30;font-size:14px"></i> Annual tax impact</div>
+                <div class="dr"><span class="dk">Depreciation deduction</span><span class="dv" id="tDep">—</span></div>
+                <div class="dr"><span class="dk">Mortgage interest deduction</span><span class="dv" id="tInt">—</span></div>
+                <div class="dr"><span class="dk">Property tax deduction</span><span class="dv" id="tProp">—</span></div>
+                <div class="dr"><span class="dk">Est. annual tax savings</span><span class="dv" id="tSave" style="color:#1D9E75">—</span></div>
+                <div class="dr"><span class="dk">Effective rate after RE</span><span class="dv" id="tEff">—</span></div>
+                <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px">Assumes a 24% bracket — tax outcomes vary by income, bracket, and filing status. Consult a CPA.</div>
+              </div>
+              <div class="card">
+                <div class="card-title"><i class="ti ti-trending-up" aria-hidden="true" style="color:#1D9E75;font-size:14px"></i> Growth forecast</div>
+                <div class="dr"><span class="dk" id="gAppLbl">5-yr appreciation (est.)</span><span class="dv" id="gApp">—</span></div>
+                <div class="dr"><span class="dk" id="gValLbl">Est. value in 5 years</span><span class="dv" id="gVal">—</span></div>
+                <div class="dr"><span class="dk" id="gEqLbl">Equity after 5 years</span><span class="dv" id="gEq">—</span></div>
+                <div class="dr"><span class="dk" id="gRentLbl">Rent growth (annual)</span><span class="dv" id="gRent">—</span></div>
+                <div class="dr"><span class="dk">State crime context</span><span class="dv" id="crimeBadge"><span class="badge">—</span></span></div>
+                <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:6px" id="gAppSource">—</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><i class="ti ti-scale" aria-hidden="true" style="color:#7F77DD;font-size:14px"></i> Risk factors</div>
+              <div id="riskBars"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tc" id="investorsTab">
+          <div class="ai-box"><div class="ai-lbl"><i class="ti ti-users" aria-hidden="true" style="font-size:10px"></i> Investor marketplace — preview</div>
+            Investates matches your properties against a pool of verified investors. Shown below are the top matches for this ZIP code and property profile. This feature will connect directly to active investors when the marketplace launches.
+          </div>
+          <div id="investorList"><div class="empty" style="padding:24px">Run analysis to see investor matches for this property.</div></div>
+          <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:8px">Match scores are based on budget range, market preference, property type, and historical investor behavior. Marketplace is in preview — profiles are illustrative.</div>
+          <div style="margin-top:10px;text-align:center;padding:8px;border-radius:var(--border-radius-md);font-size:11px;background:var(--color-background-secondary);color:var(--color-text-tertiary)">Investor marketplace launch — coming soon</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="site-footer">
+    <b>Disclaimer:</b> Investates provides automated estimates for informational purposes only — not financial, investment, tax, or legal advice. Estimates rely on third-party data (RentCast, FRED, U.S. Census, FHFA, FEMA, FBI, HUD) and rule-of-thumb assumptions that may not reflect actual costs, rents, or returns for any specific property. Always verify independently and consult qualified professionals before making investment decisions.
+  </div>
+</div>
+
+
+<script>
+/* ---- Demo mode: no backend here. /api/* calls are answered from data the real app recorded. ---- */
+(function(){
+  var FX = {"props":{"960 delhi":{"query":{"address":"960 Delhi Ave, Cincinnati, OH 45204"},"formattedAddress":"960 Delhi Ave, Cincinnati, OH 45204","addressLine1":"960 Delhi Ave","city":"Cincinnati","state":"OH","zipCode":"45204","latitude":39.095272,"longitude":-84.575351,"propertyType":"Single Family","bedrooms":3,"bathrooms":2,"squareFootage":1402,"lotSize":24306,"yearBuilt":1925,"lastSaleDate":"2025-03-25T00:00:00.000Z","lastSalePrice":15000,"hoaFee":null,"owner":null,"latestTaxAssessment":null,"latestAnnualPropertyTax":null,"valueEstimate":{"value":199000,"rangeLow":153000,"rangeHigh":245000,"comparableCount":20,"comparables":[{"address":"602 Fairbanks Ave, Cincinnati, OH 45205","price":165000,"bedrooms":3,"bathrooms":2,"squareFootage":1364,"distanceMiles":0.5,"correlation":99,"daysOnMarket":92},{"address":"3310 River Rd, Cincinnati, OH 45204","price":150000,"bedrooms":3,"bathrooms":2,"squareFootage":1342,"distanceMiles":0.7,"correlation":98,"daysOnMarket":18},{"address":"522 Enright Ave, Cincinnati, OH 45205","price":189900,"bedrooms":3,"bathrooms":2,"squareFootage":1589,"distanceMiles":0.2,"correlation":98,"daysOnMarket":4},{"address":"734 Wilbud Dr, Cincinnati, OH 45205","price":225000,"bedrooms":3,"bathrooms":2,"squareFootage":1407,"distanceMiles":1.1,"correlation":98,"daysOnMarket":5},{"address":"610 Fairbanks Ave, Cincinnati, OH 45205","price":205000,"bedrooms":3,"bathrooms":2,"squareFootage":1281,"distanceMiles":0.5,"correlation":98,"daysOnMarket":16}]},"rentEstimate":{"rent":1690,"rangeLow":1310,"rangeHigh":2060,"comparableCount":20,"comparables":[{"address":"3769 St Lawrence Ave, Cincinnati, OH 45205","price":1650,"bedrooms":3,"bathrooms":2,"squareFootage":1400,"distanceMiles":1,"correlation":98,"daysOnMarket":11},{"address":"711 Trenton Ave, Cincinnati, OH 45205","price":1455,"bedrooms":3,"bathrooms":2,"squareFootage":1402,"distanceMiles":1.1,"correlation":98,"daysOnMarket":55},{"address":"4333 Skylark Dr, Cincinnati, OH 45238","price":1550,"bedrooms":3,"bathrooms":2,"squareFootage":1457,"distanceMiles":0.7,"correlation":98,"daysOnMarket":3},{"address":"451 Grand Ave, Cincinnati, OH 45205","price":2250,"bedrooms":3,"bathrooms":2,"squareFootage":1342,"distanceMiles":0.8,"correlation":98,"daysOnMarket":194},{"address":"1261 Beech Ave, Cincinnati, OH 45205","price":1540,"bedrooms":3,"bathrooms":2,"squareFootage":1408,"distanceMiles":1.4,"correlation":98,"daysOnMarket":1}]},"activeListing":{"price":40000,"status":"Active","listedDate":"2025-04-03T00:00:00.000Z","daysOnMarket":515,"mlsName":"Cincinnati"},"errors":{"propertyRecord":null,"valueEstimate":null,"rentEstimate":null,"activeListing":null},"cached":true},"40 pinehurst":{"query":{"address":"40 Pinehurst Ave APT 2D, New York, NY 10033"},"formattedAddress":"40 Pinehurst Ave, Apt 2D, New York, NY 10033","addressLine1":"40 Pinehurst Ave","city":"New York","state":"NY","zipCode":"10033","latitude":40.849655,"longitude":-73.940007,"propertyType":"Condo","bedrooms":2,"bathrooms":1.5,"squareFootage":862,"lotSize":5075,"yearBuilt":2016,"lastSaleDate":"2019-08-15T00:00:00.000Z","lastSalePrice":765000,"hoaFee":512,"owner":null,"latestTaxAssessment":{"year":2022,"value":74279,"land":3603,"improvements":70676},"latestAnnualPropertyTax":{"year":2022,"total":7580},"valueEstimate":{"value":631000,"rangeLow":510000,"rangeHigh":753000,"comparableCount":20},"rentEstimate":{"rent":3720,"rangeLow":3080,"rangeHigh":4350,"comparableCount":20},"activeListing":{"price":930000,"status":"Inactive","listedDate":"2026-05-11T00:00:00.000Z","daysOnMarket":101,"mlsName":"OneKeyMLS"},"errors":{"propertyRecord":null,"valueEstimate":null,"rentEstimate":null,"activeListing":null},"cached":true}},"census":{"46250":{"zip":"46250","year":"2022","name":"ZCTA5 46250","population":17131,"medianHouseholdIncome":65869,"occupiedHousingUnits":8875,"ownerOccupiedUnits":3691,"renterOccupiedUnits":5184,"homeownershipRate":41.6,"renterRate":58.4},"43215":{"zip":"43215","year":"2022","name":"ZCTA5 43215","population":15754,"medianHouseholdIncome":75397,"occupiedHousingUnits":10740,"ownerOccupiedUnits":2258,"renterOccupiedUnits":8482,"homeownershipRate":21,"renterRate":79},"10033":{"zip":"10033","year":"2022","name":"ZCTA5 10033","population":58711,"medianHouseholdIncome":77209,"occupiedHousingUnits":20521,"ownerOccupiedUnits":3023,"renterOccupiedUnits":17498,"homeownershipRate":14.7,"renterRate":85.3},"28202":{"zip":"28202","year":"2022","name":"ZCTA5 28202","population":16150,"medianHouseholdIncome":95273,"occupiedHousingUnits":8941,"ownerOccupiedUnits":2395,"renterOccupiedUnits":6546,"homeownershipRate":26.8,"renterRate":73.2},"46032":{"zip":"46032","year":"2022","name":"ZCTA5 46032","population":51250,"medianHouseholdIncome":121496,"occupiedHousingUnits":20390,"ownerOccupiedUnits":13621,"renterOccupiedUnits":6769,"homeownershipRate":66.8,"renterRate":33.2},"46112":{"zip":"46112","year":"2022","name":"ZCTA5 46112","population":41437,"medianHouseholdIncome":106043,"occupiedHousingUnits":14932,"ownerOccupiedUnits":11841,"renterOccupiedUnits":3091,"homeownershipRate":79.3,"renterRate":20.7},"45204":{"zip":"45204","year":"2022","name":"ZCTA5 45204","population":7271,"medianHouseholdIncome":31458,"occupiedHousingUnits":2828,"ownerOccupiedUnits":1286,"renterOccupiedUnits":1542,"homeownershipRate":45.5,"renterRate":54.5},"38103":{"zip":"38103","year":"2022","name":"ZCTA5 38103","population":13981,"medianHouseholdIncome":89851,"occupiedHousingUnits":7618,"ownerOccupiedUnits":2628,"renterOccupiedUnits":4990,"homeownershipRate":34.5,"renterRate":65.5}},"fema":{"39.91,-86.05":{"county":"Marion","state":"Indiana","riskScore":97,"riskRating":"Relatively High","ealScore":97,"ealRating":"Relatively High"},"40.85,-73.94":{"county":"New York","state":"New York","riskScore":99,"riskRating":"Relatively High","ealScore":98,"ealRating":"Relatively High"},"39.99,-86.15":{"county":"Hamilton","state":"Indiana","riskScore":89,"riskRating":"Relatively Moderate","ealScore":93,"ealRating":"Relatively Moderate"},"39.85,-86.36":{"county":"Hendricks","state":"Indiana","riskScore":77,"riskRating":"Relatively Low","ealScore":86,"ealRating":"Relatively Moderate"},"39.10,-84.58":{"county":"Hamilton","state":"Ohio","riskScore":96,"riskRating":"Relatively High","ealScore":96,"ealRating":"Relatively High"}},"mstats":{"45204":{"zip":"45204","cached":false,"asOf":"2026-08-30T00:00:00.000Z","salePriceMedian":144900,"salePsfMedian":126.4,"saleDomAvg":66,"saleDomMedian":39,"saleTotalListings":48,"salePriceTrendPctYr":13.5,"rentMedian":1200,"rentPsfMedian":1.28,"rentDomAvg":71,"rentTotalListings":31,"rentTrendPctYr":0},"46250":{"zip":"46250","cached":false,"asOf":"2026-08-30T00:00:00.000Z","salePriceMedian":320000,"salePsfMedian":164.01,"saleDomAvg":46,"saleDomMedian":26,"saleTotalListings":103,"salePriceTrendPctYr":-1.6,"rentMedian":1695,"rentPsfMedian":1.42,"rentDomAvg":63,"rentTotalListings":29,"rentTrendPctYr":10.2}},"nearby":{"fetchedAt":"2026-08-30T20:28:49.944Z","cached":true,"count":100,"medianPricePerSqft":199,"listings":[{"address":"960 Delhi Ave, Cincinnati, OH 45204","city":"Cincinnati","state":"OH","zip":"45204","price":40000,"beds":3,"baths":2,"sqft":1402,"pricePerSqft":29,"propertyType":"Single Family","daysOnMarket":515,"listedDate":"2025-04-03T00:00:00.000Z","screenScore":72},{"address":"2568 Trevor Pl, Cincinnati, OH 45225","city":"Cincinnati","state":"OH","zip":"45225","price":89900,"beds":4,"baths":1,"sqft":1806,"pricePerSqft":50,"propertyType":"Single Family","daysOnMarket":358,"listedDate":"2025-09-07T00:00:00.000Z","screenScore":72},{"address":"2519 Warsaw Ave, Cincinnati, OH 45204","city":"Cincinnati","state":"OH","zip":"45204","price":175000,"beds":3,"baths":2,"sqft":2314,"pricePerSqft":76,"propertyType":"Single Family","daysOnMarket":347,"listedDate":"2025-09-18T00:00:00.000Z","screenScore":72},{"address":"2564 Linden St, Cincinnati, OH 45225","city":"Cincinnati","state":"OH","zip":"45225","price":115000,"beds":2,"baths":1,"sqft":1000,"pricePerSqft":115,"propertyType":"Single Family","daysOnMarket":318,"listedDate":"2025-10-17T00:00:00.000Z","screenScore":72},{"address":"2324 Madison Rd, Apt 403, Cincinnati, OH 45208","city":"Cincinnati","state":"OH","zip":"45208","price":165000,"beds":2,"baths":2,"sqft":1309,"pricePerSqft":126,"propertyType":"Condo","daysOnMarket":306,"listedDate":"2025-10-29T00:00:00.000Z","screenScore":72},{"address":"6225 Aspen Ave, Cincinnati, OH 45224","city":"Cincinnati","state":"OH","zip":"45224","price":285000,"beds":2,"baths":2,"sqft":3228,"pricePerSqft":88,"propertyType":"Single Family","daysOnMarket":296,"listedDate":"2025-11-08T00:00:00.000Z","screenScore":72},{"address":"4210 Colerain Ave, Cincinnati, OH 45223","city":"Cincinnati","state":"OH","zip":"45223","price":179900,"beds":3,"baths":1.5,"sqft":1666,"pricePerSqft":108,"propertyType":"Single Family","daysOnMarket":271,"listedDate":"2025-12-03T00:00:00.000Z","screenScore":72},{"address":"5751 Belmont Ave, Cincinnati, OH 45224","city":"Cincinnati","state":"OH","zip":"45224","price":375000,"beds":5,"baths":3.5,"sqft":2752,"pricePerSqft":136,"propertyType":"Single Family","daysOnMarket":276,"listedDate":"2025-11-28T00:00:00.000Z","screenScore":72},{"address":"1015 Purcell Ave, Cincinnati, OH 45205","city":"Cincinnati","state":"OH","zip":"45205","price":160000,"beds":0,"baths":null,"sqft":1868,"pricePerSqft":86,"propertyType":"Multi-Family","daysOnMarket":271,"listedDate":"2025-12-03T00:00:00.000Z","screenScore":72},{"address":"3235 Wold Ave, Cincinnati, OH 45207","city":"Cincinnati","state":"OH","zip":"45207","price":164900,"beds":5,"baths":2.5,"sqft":1637,"pricePerSqft":101,"propertyType":"Single Family","daysOnMarket":220,"listedDate":"2026-01-23T00:00:00.000Z","screenScore":72},{"address":"26 Juergens Ave, Cincinnati, OH 45220","city":"Cincinnati","state":"OH","zip":"45220","price":329900,"beds":0,"baths":null,"sqft":2611,"pricePerSqft":126,"propertyType":"Multi-Family","daysOnMarket":194,"listedDate":"2026-02-18T00:00:00.000Z","screenScore":72},{"address":"2462 Fairview Ave, Cincinnati, OH 45219","city":"Cincinnati","state":"OH","zip":"45219","price":317900,"beds":0,"baths":null,"sqft":2495,"pricePerSqft":127,"propertyType":"Multi-Family","daysOnMarket":192,"listedDate":"2026-02-20T00:00:00.000Z","screenScore":72}]},"fhfa":{"Alaska":{"annualAppreciationPct":6.7,"throughYear":2026,"yearsUsed":5},"Alabama":{"annualAppreciationPct":7.1,"throughYear":2026,"yearsUsed":5},"Arkansas":{"annualAppreciationPct":7.8,"throughYear":2026,"yearsUsed":5},"Arizona":{"annualAppreciationPct":6.5,"throughYear":2026,"yearsUsed":5},"California":{"annualAppreciationPct":4.4,"throughYear":2026,"yearsUsed":5},"Colorado":{"annualAppreciationPct":4.2,"throughYear":2026,"yearsUsed":5},"Connecticut":{"annualAppreciationPct":8.9,"throughYear":2026,"yearsUsed":5},"District of Columbia":{"annualAppreciationPct":0.2,"throughYear":2026,"yearsUsed":5},"Delaware":{"annualAppreciationPct":6.6,"throughYear":2026,"yearsUsed":5},"Florida":{"annualAppreciationPct":7.8,"throughYear":2026,"yearsUsed":5},"Georgia":{"annualAppreciationPct":7.7,"throughYear":2026,"yearsUsed":5},"Hawaii":{"annualAppreciationPct":6.9,"throughYear":2026,"yearsUsed":5},"Iowa":{"annualAppreciationPct":6.3,"throughYear":2026,"yearsUsed":5},"Idaho":{"annualAppreciationPct":6.1,"throughYear":2026,"yearsUsed":5},"Illinois":{"annualAppreciationPct":8,"throughYear":2026,"yearsUsed":5},"Indiana":{"annualAppreciationPct":7.6,"throughYear":2026,"yearsUsed":5},"Kansas":{"annualAppreciationPct":7.3,"throughYear":2026,"yearsUsed":5},"Kentucky":{"annualAppreciationPct":7.6,"throughYear":2026,"yearsUsed":5},"Louisiana":{"annualAppreciationPct":3.4,"throughYear":2026,"yearsUsed":5},"Massachusetts":{"annualAppreciationPct":6.7,"throughYear":2026,"yearsUsed":5},"Maryland":{"annualAppreciationPct":5.1,"throughYear":2026,"yearsUsed":5},"Maine":{"annualAppreciationPct":9.6,"throughYear":2026,"yearsUsed":5},"Michigan":{"annualAppreciationPct":7.5,"throughYear":2026,"yearsUsed":5},"Minnesota":{"annualAppreciationPct":5.2,"throughYear":2026,"yearsUsed":5},"Missouri":{"annualAppreciationPct":7.4,"throughYear":2026,"yearsUsed":5},"Mississippi":{"annualAppreciationPct":6.6,"throughYear":2026,"yearsUsed":5},"Montana":{"annualAppreciationPct":7.6,"throughYear":2026,"yearsUsed":5},"North Carolina":{"annualAppreciationPct":8.2,"throughYear":2026,"yearsUsed":5},"North Dakota":{"annualAppreciationPct":5.7,"throughYear":2026,"yearsUsed":5},"Nebraska":{"annualAppreciationPct":6.9,"throughYear":2026,"yearsUsed":5},"New Hampshire":{"annualAppreciationPct":8.7,"throughYear":2026,"yearsUsed":5},"New Jersey":{"annualAppreciationPct":9,"throughYear":2026,"yearsUsed":5},"New Mexico":{"annualAppreciationPct":7.2,"throughYear":2026,"yearsUsed":5},"Nevada":{"annualAppreciationPct":6.3,"throughYear":2026,"yearsUsed":5},"New York":{"annualAppreciationPct":8.1,"throughYear":2026,"yearsUsed":5},"Ohio":{"annualAppreciationPct":7.8,"throughYear":2026,"yearsUsed":5},"Oklahoma":{"annualAppreciationPct":6.4,"throughYear":2026,"yearsUsed":5},"Oregon":{"annualAppreciationPct":4.1,"throughYear":2026,"yearsUsed":5},"Pennsylvania":{"annualAppreciationPct":7.3,"throughYear":2026,"yearsUsed":5},"Rhode Island":{"annualAppreciationPct":8.4,"throughYear":2026,"yearsUsed":5},"South Carolina":{"annualAppreciationPct":8.8,"throughYear":2026,"yearsUsed":5},"South Dakota":{"annualAppreciationPct":7,"throughYear":2026,"yearsUsed":5},"Tennessee":{"annualAppreciationPct":8,"throughYear":2026,"yearsUsed":5},"Texas":{"annualAppreciationPct":5.3,"throughYear":2026,"yearsUsed":5},"Utah":{"annualAppreciationPct":5.8,"throughYear":2026,"yearsUsed":5},"Virginia":{"annualAppreciationPct":7.2,"throughYear":2026,"yearsUsed":5},"Vermont":{"annualAppreciationPct":9.5,"throughYear":2026,"yearsUsed":5},"Washington":{"annualAppreciationPct":4.9,"throughYear":2026,"yearsUsed":5},"Wisconsin":{"annualAppreciationPct":8.5,"throughYear":2026,"yearsUsed":5},"West Virginia":{"annualAppreciationPct":7,"throughYear":2026,"yearsUsed":5},"Wyoming":{"annualAppreciationPct":6.5,"throughYear":2026,"yearsUsed":5}},"states":{"AL":"Alabama","AK":"Alaska","AZ":"Arizona","AR":"Arkansas","CA":"California","CO":"Colorado","CT":"Connecticut","DE":"Delaware","DC":"District of Columbia","FL":"Florida","GA":"Georgia","HI":"Hawaii","ID":"Idaho","IL":"Illinois","IN":"Indiana","IA":"Iowa","KS":"Kansas","KY":"Kentucky","LA":"Louisiana","ME":"Maine","MD":"Maryland","MA":"Massachusetts","MI":"Michigan","MN":"Minnesota","MS":"Mississippi","MO":"Missouri","MT":"Montana","NE":"Nebraska","NV":"Nevada","NH":"New Hampshire","NJ":"New Jersey","NM":"New Mexico","NY":"New York","NC":"North Carolina","ND":"North Dakota","OH":"Ohio","OK":"Oklahoma","OR":"Oregon","PA":"Pennsylvania","RI":"Rhode Island","SC":"South Carolina","SD":"South Dakota","TN":"Tennessee","TX":"Texas","UT":"Utah","VT":"Vermont","VA":"Virginia","WA":"Washington","WV":"West Virginia","WI":"Wisconsin","WY":"Wyoming"},"cities":[{"city":"Indianapolis","state":"IN","appreciationPct":7.6,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Columbus","state":"OH","appreciationPct":7.8,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Memphis","state":"TN","appreciationPct":8,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Kansas City","state":"MO","appreciationPct":7.4,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Charlotte","state":"NC","appreciationPct":8.2,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Atlanta","state":"GA","appreciationPct":7.7,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Tampa","state":"FL","appreciationPct":7.8,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null},{"city":"Dallas","state":"TX","appreciationPct":5.3,"appreciationThroughYear":2026,"crimeDeltaPct":null,"crimeYear":null,"score":null}],"zips":[{"zip":"46220","label":"Indianapolis, IN","population":37102,"populationGrowthPct":null,"medianHouseholdIncome":93595,"incomeGrowthPct":null,"comparedYears":["2018","2022"]},{"zip":"43215","label":"Columbus, OH","population":15754,"populationGrowthPct":null,"medianHouseholdIncome":75397,"incomeGrowthPct":null,"comparedYears":["2018","2022"]},{"zip":"38103","label":"Memphis, TN","population":13981,"populationGrowthPct":null,"medianHouseholdIncome":89851,"incomeGrowthPct":null,"comparedYears":["2018","2022"]},{"zip":"28202","label":"Charlotte, NC","population":16150,"populationGrowthPct":null,"medianHouseholdIncome":95273,"incomeGrowthPct":null,"comparedYears":["2018","2022"]},{"zip":"30303","label":"Atlanta, GA","population":5974,"populationGrowthPct":null,"medianHouseholdIncome":null,"incomeGrowthPct":null,"comparedYears":["2018","2022"]},{"zip":"33602","label":"Tampa, FL","population":17631,"populationGrowthPct":null,"medianHouseholdIncome":88878,"incomeGrowthPct":null,"comparedYears":["2018","2022"]}],"rate":{"rate":7.11,"date":"2026-11-12"},"ai":{"analysis":{"960 delhi":{"score":64,"recommendation":"Consider buying","summary":"On paper this 1925 single family in Cincinnati's 45204 is exceptional for rental income: a $40,000 ask against a $199,000 value estimate and $1,690 rent works out to $1,168 a month in cash flow and a 45.5% cap rate. Numbers that far above the ZIP's $144,900 median sale price, on a listing that has sat for 515 days, usually mean the price reflects condition, title or occupancy problems the estimate cannot see. Ohio's 7.8% annual appreciation and a 54.5% renter share support a hold, so it is worth pursuing only after an inspection and a firm repair budget.","riskFactors":["515 days on market at a fraction of estimated value","Hamilton County FEMA risk score of 96 (relatively high)","ZIP median household income of $31,458 limits rent growth"]},"40 pinehurst":{"score":21,"recommendation":"Avoid","summary":"At $930,000 this Washington Heights condo is priced about 47% above its $631,000 value estimate, and the $3,720 rent estimate leaves it losing $4,076 a month with a 1.6% cap rate and a cash on cash return of negative 26.3%. The 26.9% projected IRR depends entirely on New York's 8.1% appreciation continuing, which is a poor fit for a rental income goal. An 85.3% renter share in 10033 means demand is not the problem; the price is.","riskFactors":["Negative cash flow of $4,076 a month","Asking price well above the value estimate","New York County FEMA risk score of 99 (relatively high)"]}},"exit":{"960 delhi":{"recommendedStrategy":"BRRRR","summary":"BRRRR scores highest at 95 because the gap between the $40,000 price and the $199,000 value estimate is where the return is: stabilize the house, then refinance in year 2 or 3 and keep the $1,168 monthly cash flow. A plain long term hold is the runner-up at 90 with a 175.2% cash on cash return and less execution risk, and it becomes the better choice if the rehab needed turns out to be larger than the roughly $18,000 the flip estimate assumes."},"40 pinehurst":{"recommendedStrategy":"Fix & flip","summary":"No strategy clears a passing score here. Fix and flip ranks first at 35, but it still projects a $197,400 loss because the $930,000 price sits far above the $631,000 value estimate. BRRRR is the runner-up at 20 and fails for the same reason: there is no equity spread to refinance out of, and a hold loses $4,076 a month. The useful exit decision on this one is not to enter at this price."}},"market":{"summary":"Across the eight tracked markets, FHFA five year appreciation is tightly grouped: Charlotte leads at 8.2% a year, followed by Memphis at 8.0% and Columbus and Tampa at 7.8%, while Dallas trails at 5.3%. Among the tracked ZIPs with income data, Charlotte's 28202 has the highest median household income at $95,273, just ahead of Indianapolis's 46220 at $93,595. Crime and growth comparisons were not available in this snapshot, so these rankings rest on appreciation and income alone."}}};
+  var realFetch = window.fetch.bind(window);
+  function json(body, status){
+    return Promise.resolve(new Response(JSON.stringify(body), { status: status || 200, headers: { 'Content-Type': 'application/json' } }));
+  }
+  function miss(what){ return json({ error: what + ' is not part of the demo data.' }, 502); }
+  function store(){ try{ return JSON.parse(sessionStorage.getItem('inv-demo-portfolio') || '[]'); }catch(e){ return window.__pf || []; } }
+  function save(v){ window.__pf = v; try{ sessionStorage.setItem('inv-demo-portfolio', JSON.stringify(v)); }catch(e){} }
+  function sampleKey(text){
+    var t = String(text || '').toLowerCase();
+    for (var k in FX.props) if (t.indexOf(k) !== -1) return k;
+    return null;
+  }
+  window.fetch = function(input, init){
+    var url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (url.indexOf('/api/') !== 0) return realFetch(input, init);
+    var u = new URL(url, location.href), q = u.searchParams, path = u.pathname;
+    var method = ((init && init.method) || 'GET').toUpperCase();
+    var body = {}; try{ body = init && init.body ? JSON.parse(init.body) : {}; }catch(e){}
+    if (method === 'POST') (window.__demoPosts = window.__demoPosts || []).push({ path: path, body: body });
+    return new Promise(function(resolve){ setTimeout(resolve, 350); }).then(function(){
+      if (path === '/api/auth/me') return json({ user: { id: 'demo', email: 'Demo visitor' } });
+      if (path === '/api/auth/logout') return json({ ok: true });
+      if (path === '/api/property'){
+        var k = sampleKey(q.get('address'));
+        if (k) return json(FX.props[k]);
+        return json({ error: 'Live lookups are off in this demo. Pick one of the sample properties in the bar at the top.' }, 404);
+      }
+      if (path === '/api/mortgage-rate') return json(FX.rate);
+      if (path === '/api/demographics') return FX.census[q.get('zip')] ? json(FX.census[q.get('zip')]) : miss('Census data for this ZIP');
+      if (path === '/api/appreciation'){
+        var s = q.get('state') || '', name = s.length === 2 ? FX.states[s.toUpperCase()] : s;
+        return FX.fhfa[name] ? json(Object.assign({ state: name }, FX.fhfa[name])) : miss('Appreciation data for this state');
+      }
+      if (path === '/api/hazard-risk'){
+        var key = parseFloat(q.get('lat')).toFixed(2) + ',' + parseFloat(q.get('lon')).toFixed(2);
+        return FX.fema[key] ? json(FX.fema[key]) : miss('Hazard risk for this location');
+      }
+      if (path === '/api/market-stats') return FX.mstats[q.get('zip')] ? json(FX.mstats[q.get('zip')]) : miss('Market statistics for this ZIP');
+      if (path === '/api/crime') return miss('Crime data');
+      if (path === '/api/amenities') return miss('Amenities data');
+      if (path === '/api/hud-fmr') return miss('HUD Fair Market Rent');
+      if (path === '/api/nearby-listings') return json(FX.nearby);
+      if (path === '/api/market-cities') return json(FX.cities);
+      if (path === '/api/market-zips') return json(FX.zips);
+      if (path === '/api/market-summary') return FX.ai.market ? json(FX.ai.market) : miss('The AI market summary');
+      if (path === '/api/analysis'){
+        var a = FX.ai.analysis && FX.ai.analysis[sampleKey(body.address || body.addr || JSON.stringify(body))];
+        return a ? json(a) : miss('The AI verdict');
+      }
+      if (path === '/api/exit-analysis'){
+        var x = FX.ai.exit && FX.ai.exit[sampleKey(JSON.stringify(body))];
+        return x ? json(x) : miss('The AI exit recommendation');
+      }
+      if (path === '/api/portfolio' && method === 'GET') return json(store());
+      if (path === '/api/portfolio' && method === 'POST'){
+        var rec = Object.assign({ id: 'demo-' + Date.now(), addedAt: new Date().toISOString() }, body);
+        var list = store(); list.push(rec); save(list); return json(rec, 201);
+      }
+      if (path.indexOf('/api/portfolio/') === 0 && method === 'DELETE'){
+        var id = decodeURIComponent(path.split('/').pop());
+        save(store().filter(function(r){ return r.id !== id; })); return json({ ok: true });
+      }
+      return miss('This feature');
+    });
+  };
+  /* Blocking alert() boxes become a small toast so the demo never stalls. */
+  window.alert = function(msg){
+    var t = document.getElementById('demoToast');
+    t.textContent = String(msg); t.style.display = 'block';
+    clearTimeout(window.__tt); window.__tt = setTimeout(function(){ t.style.display = 'none'; }, 6000);
+  };
+  window.demoPick = function(addr){
+    document.getElementById('addrInput').value = addr;
+    if (typeof analyzeListing === 'function') analyzeListing(addr);
+  };
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let chartInst=null;
+let propData=null;
+
+// ---- Auth / session ----
+// The app is gated behind a session: /api/auth/me decides on load whether to
+// show the sign-in card or the app. Portfolio data is per-user server-side
+// (lib/db.js), so this isn't cosmetic gating — the API refuses unauthenticated
+// portfolio reads and writes with a 401.
+let authMode='login';
+
+function toggleAuthMode(e){
+  if(e) e.preventDefault();
+  authMode=authMode==='login'?'signup':'login';
+  document.getElementById('authSubmit').textContent=authMode==='login'?'Sign in':'Create account';
+  document.getElementById('authToggleText').textContent=authMode==='login'?"Don't have an account?":'Already have an account?';
+  document.getElementById('authToggle').textContent=authMode==='login'?'Create one':'Sign in';
+  document.getElementById('authPassword').setAttribute('autocomplete',authMode==='login'?'current-password':'new-password');
+  document.getElementById('authError').style.display='none';
+}
+
+async function doAuth(){
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  const errEl=document.getElementById('authError');
+  const btn=document.getElementById('authSubmit');
+  errEl.style.display='none';
+  btn.disabled=true;
+  try{
+    const res=await fetch('/api/auth/'+(authMode==='login'?'login':'signup'),{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password}),
+    });
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Something went wrong.');
+    showApp(data);
+  }catch(err){
+    errEl.textContent=err.message;
+    errEl.style.display='block';
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+async function doLogout(){
+  try{ await fetch('/api/auth/logout',{method:'POST'}); }catch(err){ console.warn('Logout request failed:',err.message); }
+  // Full reload clears all in-memory analysis state — otherwise the next
+  // person to sign in on this browser would see the previous user's property.
+  window.location.reload();
+}
+
+function showApp(user){
+  document.getElementById('authGate').style.display='none';
+  document.getElementById('appRoot').style.display='block';
+  document.getElementById('userEmail').textContent=user&&user.email?user.email:'';
+}
+
+function showAuthGate(){
+  document.getElementById('appRoot').style.display='none';
+  document.getElementById('authGate').style.display='flex';
+}
+
+// Called when any API returns 401 mid-session (expired/revoked session).
+function handleSignedOut(){
+  showAuthGate();
+  const errEl=document.getElementById('authError');
+  errEl.textContent='Your session expired — please sign in again.';
+  errEl.style.display='block';
+}
+
+(async function initSession(){
+  try{
+    const res=await fetch('/api/auth/me');
+    const data=await res.json();
+    if(data.user) showApp(data.user); else showAuthGate();
+  }catch(err){
+    console.warn('Session check failed:',err.message);
+    showAuthGate();
+  }
+})();
+
+// Topbar "+ Analyze a property" — used to fire a Cowork-only sendPrompt()
+// stub that did nothing in a normal browser. Now it actually does the obvious
+// thing: jump to the Analyze tab and focus the address input.
+function goAnalyze(){
+  const analyzeBtn=document.querySelector('.nav .nb');
+  nav('analyze',analyzeBtn);
+  const inp=document.getElementById('addrInput');
+  inp.focus();
+  inp.select();
+}
+
+function nav(v,btn){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const sb=document.getElementById('sidebarEl');
+  const ap=document.getElementById('analysisPanel');
+  const pp=document.getElementById('portfolioPanel');
+  const mp=document.getElementById('marketPanel');
+  const np=document.getElementById('nearbyPanel');
+  sb.style.display=v==='analyze'?'flex':'none';
+  ap.style.display=v==='analyze'?'flex':'none';
+  if(v==='analyze') ap.style.flexDirection='column';
+  pp.style.display=v==='portfolio'?'block':'none';
+  mp.style.display=v==='market'?'block':'none';
+  np.style.display=v==='nearby'?'block':'none';
+  // .layout is a 240px/1fr CSS grid (sidebar + content). Hiding sidebarEl via
+  // display:none removes it from grid flow entirely, which left contentEl
+  // sliding into the 240px sidebar column instead of the wide one — a
+  // pre-existing bug on both Portfolio and Market (huge empty whitespace,
+  // everything squeezed into a narrow strip). Explicitly pinning contentEl's
+  // grid column fixes it regardless of whether the sidebar is shown.
+  // 'auto' (not '2 / 3') for analyze so the single-column mobile layout
+  // doesn't get forced into a phantom second column; auto-placement is
+  // correct there because the sidebar is visible. '1 / -1' spans full width
+  // in both desktop and mobile grids for the sidebar-less views.
+  document.getElementById('contentEl').style.gridColumn=v==='analyze'?'':'1 / -1';
+  if(v==='portfolio') loadPortfolio();
+  if(v==='market'){ loadMarketCities(); loadMarketZips(); loadMarketSummary(); }
+}
+
+// ---- Nearby listings (location -> ranked active listings) ----
+function nearbySearchGeo(){
+  const status=document.getElementById('nearbyStatus');
+  if(!navigator.geolocation){
+    status.style.display='block';
+    status.textContent='Your browser does not support location access — search by ZIP instead.';
+    return;
+  }
+  status.style.display='block';
+  status.innerHTML='<div class="spin"></div>Getting your location…';
+  navigator.geolocation.getCurrentPosition(
+    pos=>nearbyFetch({lat:pos.coords.latitude,lon:pos.coords.longitude}),
+    err=>{
+      status.textContent='Could not get your location ('+err.message+') — search by ZIP instead.';
+    },
+    {timeout:10000}
+  );
+}
+
+function nearbySearchZip(){
+  const zip=document.getElementById('nearbyZip').value.trim();
+  const status=document.getElementById('nearbyStatus');
+  if(!/^\d{5}$/.test(zip)){
+    status.style.display='block';
+    status.textContent='Enter a valid 5-digit ZIP code.';
+    return;
+  }
+  nearbyFetch({zip});
+}
+
+async function nearbyFetch(loc){
+  const status=document.getElementById('nearbyStatus');
+  const meta=document.getElementById('nearbyMeta');
+  const results=document.getElementById('nearbyResults');
+  status.style.display='block';
+  status.innerHTML='<div class="spin"></div>Finding active listings…';
+  meta.style.display='none';
+  results.innerHTML='';
+  try{
+    const radius=document.getElementById('nearbyRadius').value;
+    const qs=loc.zip?('zip='+encodeURIComponent(loc.zip)):('lat='+loc.lat+'&lon='+loc.lon+'&radius='+radius);
+    const res=await fetch('/api/nearby-listings?'+qs);
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.detail||data.error||'Search failed');
+    status.style.display='none';
+    if(!data.listings.length){
+      status.style.display='block';
+      status.textContent='No active listings found in this area. Try a wider radius or a different ZIP.';
+      return;
+    }
+    meta.style.display='block';
+    meta.textContent=data.count+' active listings found · area median '+(data.medianPricePerSqft!=null?'$'+data.medianPricePerSqft+'/sqft':'$/sqft unavailable')+' · showing top '+data.listings.length+' by screening score'+(data.cached?' · cached result (no RentCast quota used)':'');
+    results.innerHTML=data.listings.map(l=>{
+      const scoreCls=l.screenScore>=65?'bg':l.screenScore>=45?'ba':'br';
+      return `<div class="mkt-city">
+        <div class="mkt-city-info" style="min-width:0">
+          <div class="mkt-city-name">${l.address}</div>
+          <div class="mkt-city-sub">${[l.propertyType,(l.beds!=null?l.beds+'bd':null),(l.baths!=null?l.baths+'ba':null),(l.sqft!=null?l.sqft.toLocaleString()+' sqft':null),(l.daysOnMarket!=null?l.daysOnMarket+' DOM':null)].filter(Boolean).join(' · ')||'Details unavailable'}</div>
+        </div>
+        <div class="mkt-city-stats">
+          <div class="mkt-stat"><div class="mkt-stat-val">$${l.price.toLocaleString()}</div><div class="mkt-stat-lbl">${l.pricePerSqft!=null?'$'+l.pricePerSqft+'/sqft':'$/sqft N/A'}</div></div>
+          <div class="mkt-stat"><span class="badge ${scoreCls}" title="Relative screening score — price/sqft vs this result set + DOM. Not an investment analysis.">${l.screenScore}</span><div class="mkt-stat-lbl">screen</div></div>
+          <button class="btnp" style="font-size:11px;padding:5px 10px" onclick="analyzeListing('${l.address.replace(/'/g,"\\'")}')">Analyze</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(err){
+    status.style.display='block';
+    status.textContent='Could not load listings: '+err.message;
+  }
+}
+
+// Sends a nearby listing into the full Analyze flow (this is the point where
+// real RentCast quota gets spent on value/rent estimates — user-initiated).
+function analyzeListing(address){
+  document.getElementById('addrInput').value=address;
+  propData=null;
+  goAnalyze();
+  fetchProperty();
+}
+
+function fmtPortfolio(n){return'$'+Math.round(n).toLocaleString('en-US');}
+
+// Loads real saved properties from lib/portfolio-store.js (a flat JSON file,
+// data/portfolio.json — not mock data) via GET /api/portfolio, and computes
+// the stats row (total deployed, net cashflow, avg CoC, avg 5-yr IRR) from
+// whatever's actually saved, instead of a fixed "7 properties" table.
+async function loadPortfolio(){
+  const emptyEl=document.getElementById('portfolioEmpty');
+  const bodyEl=document.getElementById('portfolioBody');
+  let properties=[];
+  try{
+    const res=await fetch('/api/portfolio');
+    if(res.status===401){ handleSignedOut(); return; }
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to load portfolio');
+    properties=Array.isArray(data)?data:[];
+  }catch(err){
+    console.warn('Could not load portfolio:',err.message);
+    document.getElementById('portfolioCount').textContent='—';
+    emptyEl.style.display='block';
+    emptyEl.innerHTML='<i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:22px;display:block;margin-bottom:6px;color:var(--color-border-secondary)"></i>Could not load your portfolio: '+err.message;
+    bodyEl.style.display='none';
+    return;
+  }
+
+  document.getElementById('portfolioCount').textContent=properties.length+(properties.length===1?' property':' properties');
+
+  if(properties.length===0){
+    emptyEl.style.display='block';
+    bodyEl.style.display='none';
+    return;
+  }
+  emptyEl.style.display='none';
+  bodyEl.style.display='block';
+
+  const totalDeployed=properties.reduce((sum,p)=>sum+(p.price||0),0);
+  const totalCashflow=properties.reduce((sum,p)=>sum+(p.cashFlow||0),0);
+  const cocValues=properties.map(p=>p.cashOnCash).filter(v=>typeof v==='number');
+  const irrValues=properties.map(p=>p.irr).filter(v=>typeof v==='number');
+  const avgCoC=cocValues.length?cocValues.reduce((a,b)=>a+b,0)/cocValues.length:null;
+  const avgIRR=irrValues.length?irrValues.reduce((a,b)=>a+b,0)/irrValues.length:null;
+
+  document.getElementById('portfolioStats').innerHTML=
+    `<div class="mc pos"><div class="mc-lbl">Total purchase value</div><div class="mc-val">${fmtPortfolio(totalDeployed)}</div><div class="mc-sub">${properties.length} properties — sum of purchase prices, not cash invested</div></div>`+
+    `<div class="mc ${totalCashflow>=0?'pos':'neg'}"><div class="mc-lbl">Net cashflow</div><div class="mc-val">${totalCashflow>=0?'+':''}${fmtPortfolio(totalCashflow)}</div><div class="mc-sub">per month</div></div>`+
+    `<div class="mc ${(avgCoC??0)>=0?'pos':'neg'}"><div class="mc-lbl">Avg CoC</div><div class="mc-val">${avgCoC!=null?avgCoC.toFixed(1)+'%':'N/A'}</div><div class="mc-sub">cash-on-cash</div></div>`+
+    `<div class="mc ${(avgIRR??0)>=0?'pos':'neg'}"><div class="mc-lbl">Portfolio IRR</div><div class="mc-val">${avgIRR!=null?avgIRR.toFixed(1)+'%':'N/A'}</div><div class="mc-sub">avg projected 5-yr</div></div>`;
+
+  document.getElementById('portfolioRows').innerHTML=properties.slice().reverse().map(p=>{
+    const cf=typeof p.cashFlow==='number'?p.cashFlow:null;
+    const addedDate=p.addedAt?new Date(p.addedAt).toLocaleDateString():'—';
+    return `<tr>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><div style="font-weight:500;font-size:11px">${p.addr||'—'}</div><div style="font-size:10px;color:var(--color-text-secondary)">${p.city||''}</div></td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">${typeof p.price==='number'?fmtPortfolio(p.price):'—'}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);color:${cf!=null&&cf>=0?'#1D9E75':'#D85A30'};font-weight:500">${cf!=null?(cf>=0?'+':'')+fmtPortfolio(cf):'—'}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">${typeof p.cashOnCash==='number'?p.cashOnCash.toFixed(1)+'%':'—'}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">${typeof p.irr==='number'?p.irr.toFixed(1)+'%':'—'}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)">${typeof p.score==='number'?'<span class="badge '+(p.score>=65?'bg':p.score>=50?'ba':'br')+'">'+p.score+'</span>':'—'}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-secondary)">${addedDate}</td>
+      <td style="padding:7px 10px;border-bottom:0.5px solid var(--color-border-tertiary)"><button style="font-size:11px;color:#D85A30;cursor:pointer;background:none;border:none;font-weight:500" onclick="removeFromPortfolio('${p.id}')">Remove</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// Saves the currently-analyzed property (real address + the same metrics
+// computed in buildResults(), stored on propData.lastMetrics) to
+// data/portfolio.json via POST /api/portfolio.
+async function addToPortfolio(){
+  const p=propData;
+  const btn=document.getElementById('addPortfolioBtn');
+  const note=document.getElementById('addPortfolioNote');
+  if(!p||!p.lastMetrics){
+    alert('Run analysis first.');
+    return;
+  }
+  btn.disabled=true;
+  note.style.display='none';
+  try{
+    const res=await fetch('/api/portfolio',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        addr:p.addr,
+        city:p.city,
+        price:p.price,
+        rent:p.rent,
+        cashFlow:p.lastMetrics.netCF,
+        capRate:p.lastMetrics.cap,
+        cashOnCash:p.lastMetrics.coc,
+        irr:p.lastMetrics.irr,
+        score:p.lastMetrics.score,
+        recommendation:p.lastMetrics.recommendation,
+      }),
+    });
+    if(res.status===401){ handleSignedOut(); return; }
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to save');
+    note.textContent='Added to portfolio.';
+    note.style.color='#1D9E75';
+  }catch(err){
+    note.textContent='Could not add to portfolio: '+err.message;
+    note.style.color='#D85A30';
+  }finally{
+    note.style.display='block';
+    btn.disabled=false;
+  }
+}
+
+async function removeFromPortfolio(id){
+  try{
+    const res=await fetch('/api/portfolio/'+encodeURIComponent(id),{method:'DELETE'});
+    if(res.status===401){ handleSignedOut(); return; }
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to remove');
+    loadPortfolio();
+  }catch(err){
+    alert('Could not remove property: '+err.message);
+  }
+}
+
+// Real data for a fixed curated list of markets (lib/market-cities.js) —
+// ranked by FHFA appreciation + FBI crime, not cash flow (no free source for
+// real per-market rental data without spending RentCast quota across many
+// cities). See the banner at the top of the Market tab for the full caveat.
+async function loadMarketCities(){
+  const el=document.getElementById('marketCitiesList');
+  try{
+    const res=await fetch('/api/market-cities');
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to load');
+    if(!Array.isArray(data)||data.length===0){
+      el.innerHTML='<div class="empty" style="padding:20px;font-size:11px">No market data available.</div>';
+      return;
+    }
+    el.innerHTML=data.map(c=>{
+      const badgeClass=c.score==null?'ba':c.score>=60?'bg':c.score>=30?'ba':'br';
+      const apprText=c.appreciationPct!=null?c.appreciationPct+'% 5yr appr.':'Appreciation N/A';
+      const crimeText=c.crimeDeltaPct!=null?(c.crimeDeltaPct<=0?Math.abs(c.crimeDeltaPct)+'% below avg crime':'+'+c.crimeDeltaPct+'% above avg crime'):'Crime data N/A';
+      return `<div class="mkt-city"><div class="mkt-city-info"><div class="mkt-city-name">${c.city}, ${c.state}</div><div class="mkt-city-sub">${apprText} · ${crimeText}</div></div><div class="mkt-city-stats"><div><span class="badge ${badgeClass}">${c.score!=null?c.score:'N/A'}</span></div></div></div>`;
+    }).join('');
+  }catch(err){
+    console.warn('Market cities unavailable:',err.message);
+    el.innerHTML='<div class="empty" style="padding:20px;font-size:11px">Could not load market cities: '+err.message+'</div>';
+  }
+}
+
+// Real Census population/income growth for a fixed curated list of ZIPs
+// (lib/market-zips.js) — a genuine multi-year trend (2018 vs. 2022 ACS
+// vintages), not a "YoY" figure, and not real estate price appreciation
+// specifically (that's the "Top investment cities" card, via FHFA).
+async function loadMarketZips(){
+  const el=document.getElementById('marketZipsList');
+  try{
+    const res=await fetch('/api/market-zips');
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to load');
+    if(!Array.isArray(data)||data.length===0){
+      el.innerHTML='<div class="empty" style="padding:20px;font-size:11px">No ZIP data available.</div>';
+      return;
+    }
+    el.innerHTML=data.map(z=>{
+      const pct=z.populationGrowthPct;
+      const badgeClass=pct==null?'ba':pct>=2?'bg':pct>=0?'ba':'br';
+      const sub=z.medianHouseholdIncome!=null?'Median income: $'+z.medianHouseholdIncome.toLocaleString():'Income data N/A';
+      return `<div class="mkt-city"><div class="mkt-city-info"><div class="mkt-city-name">${z.zip} — ${z.label}</div><div class="mkt-city-sub">${sub}</div></div><div class="mkt-city-stats"><div class="mkt-stat"><div class="mkt-stat-val">${pct!=null?(pct>=0?'+':'')+pct+'%':'N/A'}</div><div class="mkt-stat-lbl">pop./yr (${z.comparedYears?z.comparedYears.join('–'):''})</div></div><div><span class="badge ${badgeClass}">${pct!=null?(pct>=0?'Growing':'Shrinking'):'N/A'}</span></div></div></div>`;
+    }).join('');
+  }catch(err){
+    console.warn('Market ZIPs unavailable:',err.message);
+    el.innerHTML='<div class="empty" style="padding:20px;font-size:11px">Could not load market ZIPs: '+err.message+'</div>';
+  }
+}
+
+function switchTab(t,btn){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  ['ov','cf','demand','exit','tax','investors'].forEach(id=>{
+    const el=document.getElementById(id+'Tab');
+    if(el){el.className='tc'+(t===id?' on':'');}
+  });
+}
+
+// Kept only as historical reference — no longer used now that fetchProperty()
+// pulls live data from RentCast via /api/property.
+const MOCK_PROPS={
+  'default':{addr:'2847 Maple Grove Dr',city:'Indianapolis, IN 46220',type:'Single-family',price:385000,zest:397200,rent:2310,beds:3,baths:2,sqft:1520,dom:12,yearBuilt:1998,trend:'+4.2% YoY',rate:6.8}
+};
+
+// Fallback mortgage rate, only used if the live FRED lookup fails (offline,
+// missing API key, FRED outage, etc.) — not a substitute for the real thing.
+const FALLBACK_RATE=6.75;
+
+// Mortgage rate is a slow-moving weekly national figure, not per-address, so
+// fetch it once per page load and cache it rather than re-fetching per lookup.
+let cachedMortgageRate=null;
+async function getMortgageRate(){
+  if(cachedMortgageRate) return cachedMortgageRate;
+  try{
+    const res=await fetch('/api/mortgage-rate');
+    const data=await res.json();
+    if(!res.ok||typeof data.rate!=='number') throw new Error(data.error||'Invalid response');
+    cachedMortgageRate={value:data.rate,date:data.date,live:true};
+  }catch(err){
+    console.warn('Live mortgage rate unavailable, using fallback:',err.message);
+    cachedMortgageRate={value:FALLBACK_RATE,date:null,live:false};
+  }
+  return cachedMortgageRate;
+}
+
+// Census ACS5 demographics are ZIP-level and come from a separate, free API
+// (not RentCast) — safe to call on every lookup without touching the
+// RentCast monthly quota. Failure degrades to null; buildResults() handles
+// that by falling back to a "data unavailable" message instead of throwing.
+async function getDemographics(zip){
+  if(!zip) return null;
+  try{
+    const res=await fetch('/api/demographics?zip='+encodeURIComponent(zip));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('Census demographics unavailable:',err.message);
+    return null;
+  }
+}
+
+// FHFA has no key/quota at all — safe to call on every lookup. Failure
+// degrades to null; buildResults() falls back to a flat national placeholder
+// rate (clearly labeled as such) instead of breaking the growth projection.
+async function getAppreciation(state){
+  if(!state) return null;
+  try{
+    const res=await fetch('/api/appreciation?state='+encodeURIComponent(state));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('FHFA appreciation data unavailable:',err.message);
+    return null;
+  }
+}
+
+// FEMA's National Risk Index also has no key/quota — safe on every lookup.
+// Failure degrades to null; buildResults() leaves the "Natural hazard risk"
+// row out of the risk list rather than showing a made-up value.
+async function getHazardRisk(lat,lon){
+  if(lat==null||lon==null) return null;
+  try{
+    const res=await fetch('/api/hazard-risk?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('FEMA hazard risk unavailable:',err.message);
+    return null;
+  }
+}
+
+// FBI Crime Data API needs a free key (unlike FHFA/FEMA) but no meaningful
+// quota. State-level only — see lib/fbi-crime.js for why this doesn't try to
+// pass itself off as neighborhood-level data.
+async function getCrimeStats(state,city){
+  if(!state) return null;
+  try{
+    const res=await fetch('/api/crime?state='+encodeURIComponent(state)+(city?'&city='+encodeURIComponent(city):''));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('FBI crime data unavailable:',err.message);
+    return null;
+  }
+}
+
+// OpenStreetMap Overpass — free, no key, no quota. Counts nearby amenities.
+async function getAmenities(lat,lon){
+  if(lat==null||lon==null) return null;
+  try{
+    const res=await fetch('/api/amenities?lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lon));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('Amenity data unavailable:',err.message);
+    return null;
+  }
+}
+
+// RentCast ZIP market stats (/markets) — 1 request per ZIP per week (cached).
+// Backs the neighborhood trend, ZIP DOM context, and real rent growth.
+async function getMarketStats(zip){
+  if(!zip) return null;
+  try{
+    const res=await fetch('/api/market-stats?zip='+encodeURIComponent(zip));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('ZIP market stats unavailable:',err.message);
+    return null;
+  }
+}
+
+// HUD FMR needs a free token (like FBI crime) and is matched by metro/county
+// name against the property's city — see lib/hud-fmr.js for why "no match"
+// is a legitimate, honestly-surfaced outcome rather than a guessed number.
+async function getHudFmr(state,city){
+  if(!state||!city) return null;
+  try{
+    const res=await fetch('/api/hud-fmr?state='+encodeURIComponent(state)+'&city='+encodeURIComponent(city));
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Invalid response');
+    return data;
+  }catch(err){
+    console.warn('HUD FMR data unavailable:',err.message);
+    return null;
+  }
+}
+
+// Concurrency guard, shared-promise style: mashing Enter (or clicking "Run
+// AI analysis" while a fetch is mid-flight) used to either fire duplicate
+// RentCast lookups (real quota spent twice) or — worse, with a plain boolean
+// guard — silently no-op, leaving runAnalysis() with no propData and a dead
+// empty state. Now every concurrent caller awaits the SAME in-flight fetch.
+let fetchPromise=null;
+function fetchProperty(){
+  if(fetchPromise) return fetchPromise;
+  fetchPromise=fetchPropertyInner().finally(()=>{fetchPromise=null;});
+  return fetchPromise;
+}
+async function fetchPropertyInner(){
+  const addrEl=document.getElementById('addrInput');
+  const pc=document.getElementById('propCard');
+  const address=addrEl.value.trim();
+  if(!address) return;
+
+  addrEl.style.border='0.5px solid #1D9E75';
+  const prevAddr=propData?propData.addr:null;
+
+  let profile;
+  let mortgageRate;
+  try{
+    // Fetch the property profile and the current mortgage rate in parallel —
+    // they're independent, no reason to wait on one before starting the other.
+    const [profileRes,rateResult]=await Promise.all([
+      fetch('/api/property?address='+encodeURIComponent(address)),
+      getMortgageRate(),
+    ]);
+    profile=await profileRes.json();
+    if(!profileRes.ok) throw new Error(profile.error||'Lookup failed');
+    mortgageRate=rateResult;
+  }catch(err){
+    addrEl.style.border='0.5px solid #D85A30';
+    // The topbar chip used to statically claim "RentCast live" no matter
+    // what — even with a broken key or cancelled subscription. Reflect
+    // reality instead.
+    document.getElementById('rcChip').innerHTML='<i class="ti ti-plug-x" aria-hidden="true" style="font-size:11px"></i> RentCast error';
+    alert('Could not fetch property data: '+err.message);
+    propData=null;
+    return;
+  }
+  document.getElementById('rcChip').innerHTML='<i class="ti ti-plug" aria-hidden="true" style="font-size:11px"></i> RentCast (recorded)';
+
+  const value=profile.valueEstimate?.value ?? null;
+  const rent=profile.rentEstimate?.rent ?? null;
+
+  // Demographics, appreciation, hazard risk, and crime stats all depend on
+  // fields (ZIP, state, lat/lon) we just got back from RentCast, so none can
+  // start until profile resolves — but they're independent of each other, so
+  // run them in parallel.
+  const [demographics,appreciation,hazardRisk,crimeStats,hudFmr,marketStats,amenities]=await Promise.all([
+    getDemographics(profile.zipCode||null),
+    getAppreciation(profile.state||null),
+    getHazardRisk(profile.latitude??null,profile.longitude??null),
+    getCrimeStats(profile.state||null,profile.city||null),
+    getHudFmr(profile.state||null,profile.city||null),
+    getMarketStats(profile.zipCode||null),
+    getAmenities(profile.latitude??null,profile.longitude??null),
+  ]);
+
+  if(value==null||rent==null){
+    addrEl.style.border='0.5px solid #D85A30';
+    alert('RentCast did not return enough data for this address (no value or rent estimate available). Try a different address.');
+    propData=null;
+    return;
+  }
+
+  const activeListing=profile.activeListing?.price ?? null;
+  const dom=profile.activeListing?.daysOnMarket ?? null;
+
+  propData={
+    addr:profile.addressLine1||address,
+    city:[profile.city,profile.state,profile.zipCode].filter(Boolean).join(', '),
+    zip:profile.zipCode||null,
+    state:profile.state||null,
+    type:profile.propertyType||'Unknown',
+    // Default purchase price comes from an active sale listing if one exists,
+    // otherwise the current value estimate. NOT lastSalePrice — that can be
+    // years old and well below current market value, which was inflating IRR
+    // and equity numbers on properties that were actually bad deals. This is
+    // only a starting point: the user can (and should) edit the "Purchase
+    // price" field below to whatever they're actually paying.
+    price:activeListing ?? value,
+    priceSource:activeListing!=null?'active listing':'no active listing found — defaulted to value estimate',
+    lastSalePrice:profile.lastSalePrice ?? null,
+    zest:value,
+    rent:rent,
+    // Used to default missing values to 0 — which reads as "studio, no
+    // bathroom" on screen (a real, misleading data point) instead of what it
+    // actually is: RentCast just didn't return this field for this address.
+    // null + honest "N/A" display is correct; 0 is a lie.
+    beds:profile.bedrooms ?? null,
+    baths:profile.bathrooms ?? null,
+    sqft:profile.squareFootage ?? null,
+    dom:dom, // from the active listing, if one exists (ZIP average shown as context otherwise)
+    yearBuilt:profile.yearBuilt ?? '—',
+    // Real ZIP-level median-price trend from RentCast /markets — this was
+    // "Pending market data integration" from day one until now.
+    trend:(marketStats&&marketStats.salePriceTrendPctYr!=null)?
+      (marketStats.salePriceTrendPctYr>=0?'+':'')+marketStats.salePriceTrendPctYr+'%/yr (ZIP median price)':
+      'N/A — no ZIP trend data',
+    marketStats:marketStats, // null if /markets lookup failed or no data for this ZIP
+    amenities:amenities, // null if Overpass failed/timed out; free, no key
+    // Real county tax record + HOA fee — RentCast returned these all along,
+    // but the cash-flow math was ignoring them in favor of a flat 1.1%
+    // assumption and $0 HOA for every property.
+    taxAnnual:(typeof profile.latestAnnualPropertyTax==='number')?profile.latestAnnualPropertyTax:
+      (profile.latestAnnualPropertyTax&&typeof profile.latestAnnualPropertyTax.total==='number')?profile.latestAnnualPropertyTax.total:null,
+    taxYear:(profile.latestAnnualPropertyTax&&profile.latestAnnualPropertyTax.year)||null,
+    hoaMonthly:(typeof profile.hoaFee==='number'&&profile.hoaFee>0)?profile.hoaFee:null,
+    // Top-5 comps by correlation (may be empty for profiles served from an
+    // older cache that predates comps being exposed).
+    saleComps:profile.valueEstimate?.comparables||[],
+    rentComps:profile.rentEstimate?.comparables||[],
+    rate:mortgageRate.value,
+    rateLive:mortgageRate.live,
+    rateDate:mortgageRate.date,
+    demographics:demographics, // null if Census lookup failed or ZIP unknown
+    appreciation:appreciation, // null if FHFA lookup failed or state unknown
+    hazardRisk:hazardRisk, // null if FEMA lookup failed or lat/lon unknown
+    crimeStats:crimeStats, // null if FBI lookup failed, missing key, or state unknown
+    hudFmr:hudFmr, // null if HUD lookup failed, missing token, or no metro/county match
+    // true if this came from lib/rentcast-cache.js instead of a fresh
+    // RentCast call — surfaced in the UI so it's clear when a lookup didn't
+    // spend any of the 50/month free-tier quota.
+    cached:profile.cached===true,
+  };
+
+  pc.classList.add('show');
+  document.getElementById('pcAddr').textContent=propData.addr+', '+propData.city;
+  document.getElementById('pcType').textContent=propData.type+' · '+
+    (propData.beds!=null?propData.beds+'bd':'N/A bd')+'/'+(propData.baths!=null?propData.baths+'ba':'N/A ba')+' · '+
+    (propData.sqft!=null?propData.sqft.toLocaleString()+' sqft':'sqft N/A');
+  document.getElementById('pcPrice').textContent='$'+propData.price.toLocaleString();
+  document.getElementById('pcGrid').innerHTML=
+    '<div class="pc-item">Value est.: <span>$'+propData.zest.toLocaleString()+'</span></div>'+
+    '<div class="pc-item">Rent est: <span>$'+propData.rent.toLocaleString()+'/mo</span></div>'+
+    '<div class="pc-item">DOM: <span>'+(propData.dom!=null?propData.dom+' days':'N/A')+'</span></div>'+
+    '<div class="pc-item">Built: <span>'+propData.yearBuilt+'</span></div>'+
+    '<div class="pc-item">Rate: <span>'+propData.rate+'% '+(propData.rateLive?'(recorded)':'(placeholder)')+'</span></div>'+
+    '<div class="pc-item">Trend: <span'+(propData.marketStats&&propData.marketStats.salePriceTrendPctYr!=null?'>'+((propData.marketStats.salePriceTrendPctYr>=0?'+':'')+propData.marketStats.salePriceTrendPctYr+'%/yr'):' style="color:var(--color-text-tertiary)">N/A')+'</span></div>';
+  const vsZ=((propData.price/propData.zest-1)*100).toFixed(1);
+  document.getElementById('pcBadges').innerHTML=
+    '<span class="badge '+(propData.price<propData.zest?'bg':'ba')+'">'+
+    (propData.price<propData.zest?vsZ+'% below value estimate':'+'+vsZ+'% above value estimate')+'</span>'+
+    '<span class="badge bb">RentCast synced</span>'+
+    (activeListing!=null?'<span class="badge bp">Active listing</span>':'')+
+    (propData.cached?'<span class="badge bp" title="Served from cache — this lookup didn\'t use any RentCast quota">Cached (no quota used)</span>':'');
+
+  document.getElementById('priceOverrideWrap').style.display='flex';
+  document.getElementById('priceInput').value=propData.price;
+  document.getElementById('priceSourceNote').textContent=
+    'Default: '+propData.priceSource+(propData.lastSalePrice?' (last sold for $'+propData.lastSalePrice.toLocaleString()+')':'')+'. Edit if you know the real price.';
+
+  // If the results panel is still showing a PREVIOUS property's analysis
+  // (e.g. fetched a new address, or came in via a Nearby "Analyze" click),
+  // hide it — leaving property A's score next to property B's card was
+  // silently misleading. analysisSeq bump also invalidates any of A's
+  // still-in-flight AI responses.
+  if(document.getElementById('resultsEl').style.display==='block'&&prevAddr!==propData.addr){
+    analysisSeq++;
+    document.getElementById('resultsEl').style.display='none';
+    document.getElementById('emptyEl').style.display='block';
+    document.getElementById('addPortfolioBtn').style.display='none';
+    document.getElementById('addPortfolioNote').style.display='none';
+  }
+
+  addrEl.style.border='';
+}
+
+// Renders the HUD FMR card added to the Demand tab. Three honest outcomes:
+// matched (real numbers + area name), matched-but-no-token (tells the user
+// exactly what's missing, doesn't pretend), and no-metro/county-match found.
+// Real comparable sales — the top-correlation comps RentCast used for the
+// value estimate. Empty for profiles served from a cache entry written
+// before comps were exposed; refetching the address fills them in.
+function renderComps(p){
+  const body=document.getElementById('compsBody');
+  const comps=p.saleComps||[];
+  if(!comps.length){
+    body.innerHTML='<div class="dr"><span class="dk">No comparables available — if this property was analyzed before, its cached profile predates comps support (refetch to load them)</span><span class="dv">—</span></div>';
+    return;
+  }
+  body.innerHTML=comps.map(c=>{
+    const psf=(c.price&&c.squareFootage)?Math.round(c.price/c.squareFootage):null;
+    const meta=[c.bedrooms!=null?c.bedrooms+'bd':null,c.squareFootage?c.squareFootage.toLocaleString()+' sf':null,c.distanceMiles!=null?c.distanceMiles+' mi':null,c.correlation!=null?c.correlation+'% match':null].filter(Boolean).join(' · ');
+    return `<div class="dr"><span class="dk" style="max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.address||'').replace(/"/g,'&quot;')}">${c.address||'—'}</span><span class="dv" style="font-weight:400;font-size:11px;color:var(--color-text-secondary);text-align:right">${meta} <b style="color:var(--color-text-primary)">${c.price!=null?'$'+c.price.toLocaleString():'—'}</b>${psf?' <span style="color:var(--color-text-tertiary)">($'+psf+'/sf)</span>':''}</span></div>`;
+  }).join('');
+}
+
+// Nearby amenities from OpenStreetMap (free, no key). Counts within ~1 mile,
+// plus a transparent weighted rollup. Deliberately NOT called "Walk Score" —
+// that's a proprietary model; this is a plain count with published targets.
+function renderAmenities(p){
+  const body=document.getElementById('amenBody');
+  const note=document.getElementById('amenNote');
+  const scoreEl=document.getElementById('amenScore');
+  const a=p.amenities;
+  if(!a){
+    scoreEl.textContent='';
+    body.innerHTML='<div class="dr"><span class="dk">Data unavailable</span><span class="dv">N/A</span></div>';
+    note.textContent='OpenStreetMap lookup failed or timed out — no amenity data for this location.';
+    return;
+  }
+  const cls=a.score>=70?'bg':a.score>=40?'ba':'br';
+  scoreEl.innerHTML='<span class="badge '+cls+'">'+a.score+'/100</span>';
+  body.innerHTML=Object.values(a.counts).map(c=>
+    `<div class="dr"><span class="dk">${c.label}</span><span class="dv">${c.count}${c.count>=c.target?' <span style="color:#1D9E75">✓</span>':''}</span></div>`
+  ).join('');
+  note.textContent='Counted within '+(a.radiusMeters/1609).toFixed(1)+' mi via OpenStreetMap (free, crowd-sourced — sparse coverage in rural areas can understate this). Not Walk Score®; ✓ marks categories meeting the walkable-neighborhood target.';
+}
+
+function renderHudFmr(p){
+  const body=document.getElementById('hudFmrBody');
+  const note=document.getElementById('hudFmrNote');
+  const f=p.hudFmr;
+  if(f&&f.matched){
+    const rent=p.rent;
+    const floor=f.twoBed;
+    const cmp=(rent!=null&&floor!=null)?(rent>=floor?'above':'below'):null;
+    body.innerHTML=
+      `<div class="dr"><span class="dk">Area matched</span><span class="dv">${f.areaName} (${f.areaType})</span></div>`+
+      `<div class="dr"><span class="dk">2BR FMR</span><span class="dv">${floor!=null?'$'+floor.toLocaleString():'N/A'}</span></div>`+
+      `<div class="dr"><span class="dk">1BR / 3BR FMR</span><span class="dv">${f.oneBed!=null?'$'+f.oneBed.toLocaleString():'N/A'} / ${f.threeBed!=null?'$'+f.threeBed.toLocaleString():'N/A'}</span></div>`+
+      (cmp?`<div class="dr"><span class="dk">This property's rent est.</span><span class="dv"><span class="badge ${cmp==='above'?'bg':'ba'}">${cmp} the FMR floor</span></span></div>`:'');
+    note.textContent=`HUD FY${f.fiscalYear} Fair Market Rent, matched to ${f.areaName}. This is a Section 8 benchmark, not a market-rate estimate — expect it to sit below the RentCast rent estimate above in most markets.`;
+  }else if(f&&f.matched===false){
+    body.innerHTML='<div class="dr"><span class="dk">No area match</span><span class="dv">N/A</span></div>';
+    note.textContent=`No HUD FMR metro/county area name matched "${p.city.split(',')[0]}" in ${f.state}. HUD FMR data unavailable for this property.`;
+  }else{
+    body.innerHTML='<div class="dr"><span class="dk">Data unavailable</span><span class="dv">N/A</span></div>';
+    note.textContent='HUD Fair Market Rent data unavailable — likely needs a free HUD_FMR_API_TOKEN (see .env.local.example), or the lookup failed.';
+  }
+}
+
+function fmt(n){return'$'+Math.round(n).toLocaleString('en-US');}
+
+function scoreColor(s){
+  if(s>=80) return{stroke:'#1D9E75',track:'#E1F5EE',text:'#085041'};
+  if(s>=60) return{stroke:'#BA7517',track:'#FAEEDA',text:'#633806'};
+  return{stroke:'#D85A30',track:'#FCEBEB',text:'#791F1F'};
+}
+function scoreLetter(s){
+  if(s>=93) return'A+'; if(s>=90) return'A'; if(s>=87) return'A−';
+  if(s>=83) return'B+'; if(s>=80) return'B'; if(s>=77) return'B−';
+  if(s>=73) return'C+'; if(s>=70) return'C'; if(s>=67) return'C−';
+  if(s>=60) return'D+'; return'D';
+}
+
+async function runAnalysis(){
+  document.getElementById('emptyEl').style.display='none';
+  document.getElementById('resultsEl').style.display='none';
+  document.getElementById('loadEl').style.display='block';
+  ['cfResults','demResults','exitResults','taxResults'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+  ['cfEmpty','demEmpty','exitEmpty','taxEmpty'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='block';
+  });
+  document.getElementById('addPortfolioBtn').style.display='none';
+  document.getElementById('addPortfolioNote').style.display='none';
+
+  if(!propData){
+    await fetchProperty();
+  }
+  if(!propData){
+    // fetchProperty() already alerted the user about the failure.
+    document.getElementById('loadEl').style.display='none';
+    document.getElementById('emptyEl').style.display='block';
+    return;
+  }
+
+  // Use whatever is currently in the purchase-price field — the user may have
+  // edited it away from the auto-filled default (active listing / value
+  // estimate). This is the number the entire analysis runs on.
+  const priceOverride=parseFloat(document.getElementById('priceInput').value);
+  if(!priceOverride||priceOverride<=0){
+    alert('Enter a valid purchase price before running analysis.');
+    document.getElementById('loadEl').style.display='none';
+    document.getElementById('emptyEl').style.display='block';
+    return;
+  }
+  propData.price=priceOverride;
+
+  setTimeout(buildResults,600);
+}
+
+function buildResults(){
+  const p=propData;
+  analysisSeq++;
+  const seq=analysisSeq;
+  // Keep the sidebar summary in sync with whatever price the analysis is
+  // actually running on (the user may have edited the override field).
+  document.getElementById('pcPrice').textContent='$'+p.price.toLocaleString();
+  const vsZUpdated=((p.price/p.zest-1)*100).toFixed(1);
+  document.getElementById('pcBadges').innerHTML=
+    '<span class="badge '+(p.price<p.zest?'bg':'ba')+'">'+
+    (p.price<p.zest?vsZUpdated+'% below value estimate':'+'+vsZUpdated+'% above value estimate')+'</span>'+
+    '<span class="badge bb">RentCast synced</span>';
+  // Clamped to the input's own min/max — typing "0" or "500" used to flow
+  // straight into the math (0 became a silent 20 via ||, but 500% didn't).
+  const dpPct=Math.max(3,Math.min(100,parseFloat(document.getElementById('dpct').value)||20));
+  const rate=p.rate;
+  const down=Math.round(p.price*dpPct/100);
+  const loan=p.price-down;
+  const mr=rate/100/12;
+  const mort=Math.round(loan*mr*Math.pow(1+mr,360)/(Math.pow(1+mr,360)-1));
+  // Property tax: the actual county record when RentCast has it, otherwise
+  // the old 1.1%-of-price assumption (labeled as which one you're seeing).
+  const usingRealTax=p.taxAnnual!=null&&p.taxAnnual>0;
+  const ptax=usingRealTax?Math.round(p.taxAnnual/12):Math.round(p.price*0.011/12);
+  // HOA: a real monthly expense the math previously ignored entirely.
+  const hoa=p.hoaMonthly!=null?Math.round(p.hoaMonthly):0;
+  const maint=Math.round(p.price*0.01/12);
+  // Vacancy: the ZIP's real Census vacancy rate when available, otherwise the
+  // old flat 5%. Clamped to 2-15% — raw Census vacancy includes seasonal and
+  // otherwise-unavailable units, so a resort ZIP can read 40%+, which would
+  // be nonsense applied to a normal long-term rental.
+  const usingRealVacancy=!!(p.demographics&&typeof p.demographics.vacancyRatePct==='number');
+  const vacPct=usingRealVacancy?Math.max(2,Math.min(15,p.demographics.vacancyRatePct)):5;
+  const vac=Math.round(p.rent*vacPct/100);
+  const mgmt=Math.round(p.rent*0.08);
+  // Insurance used to be a flat $120/mo applied to every property — wrong in
+  // both directions (a $900k coastal house and a $90k midwest duplex don't
+  // cost the same to insure). Now a 0.5%-of-value/yr rule of thumb, clearly
+  // labeled as an estimate in the UI. Still an assumption, but one that at
+  // least scales with the actual property.
+  const ins=Math.round(p.price*0.005/12);
+  const totalExp=mort+ptax+ins+maint+vac+mgmt+hoa;
+  const netCF=p.rent-totalExp;
+  const annCF=netCF*12;
+  const noi=(p.rent-vac-ptax-ins-maint-hoa)*12;
+  const cap=(noi/p.price*100).toFixed(1);
+  const coc=(annCF/down*100).toFixed(1);
+  // Real state-level appreciation from FHFA's House Price Index (see
+  // lib/fhfa.js) when available — a trailing CAGR over up to 5 years of
+  // actual purchase-only price data for this property's state. Falls back to
+  // a flat 4.2% national rule-of-thumb, clearly labeled as a placeholder in
+  // the UI below, only if FHFA data wasn't available for this state.
+  const usingRealAppreciation=!!(p.appreciation&&typeof p.appreciation.annualAppreciationPct==='number');
+  const appRate=usingRealAppreciation?p.appreciation.annualAppreciationPct/100:0.042;
+  // Hold period: this select existed in the sidebar but was NEVER read — all
+  // the projection math below was hardcoded to 5 years no matter what the
+  // user picked. Now it actually drives appreciation, equity, IRR, and the
+  // projection chart. Principal paydown also switched from a crude flat
+  // `loan*0.058` 5-yr guess to the real amortization formula (loan balance
+  // remaining after H years of payments at this loan's actual rate).
+  const holdYears=parseInt(document.getElementById('hperiod').value)||5;
+  const nPay=holdYears*12;
+  const balH=loan*(Math.pow(1+mr,360)-Math.pow(1+mr,nPay))/(Math.pow(1+mr,360)-1);
+  const princH=Math.round(loan-balH);
+  const valH=Math.round(p.price*Math.pow(1+appRate,holdYears));
+  const eqH=(valH-p.price)+down+princH;
+  const totalRetH=annCF*holdYears+eqH;
+  const irr=((Math.pow(totalRetH/down+1,1/holdYears)-1)*100).toFixed(1);
+
+  // This rule-based score is only a ~1-2s placeholder shown while the real
+  // AI verdict loads (or a fallback if that call fails) — but two real bugs
+  // here were making it unreliable even as a placeholder:
+  // 1. Properties without an active listing default purchase price to the
+  //    value estimate EXACTLY (see priceSource below), so `p.price<p.zest`
+  //    was always false for them — losing 12 points unconditionally on most
+  //    lookups, regardless of how good the deal actually was. Now credits
+  //    "at or below value estimate" (<=) partially, and strictly below more.
+  // 2. Hard cliffs at cap>4/coc>5/etc meant e.g. an exact 4.0% cap rate (a
+  //    common rounded real-world number) scored identically to a 0% cap
+  //    rate. Softened with an extra low-end tier on each metric so scores
+  //    spread out more realistically instead of clustering at the floor.
+  const capN=parseFloat(cap),cocN=parseFloat(coc),irrN=parseFloat(irr);
+  const score=Math.min(98,Math.max(10,Math.round(
+    (netCF>0?22:netCF>-200?8:0)+
+    (capN>6?18:capN>=4?10:capN>=2?4:0)+
+    (cocN>8?20:cocN>=5?12:cocN>=0?6:0)+
+    (p.price<p.zest?12:p.price<=p.zest?6:0)+
+    (irrN>12?14:irrN>=8?8:irrN>=4?4:0)+
+    ((p.dom!=null&&p.dom<21)?8:0)+4
+  )));
+
+  document.getElementById('loadEl').style.display='none';
+  document.getElementById('resultsEl').style.display='block';
+
+  const sc=scoreColor(score);
+  const ltr=scoreLetter(score);
+  const circ=document.getElementById('scoreArc');
+  const track=document.getElementById('scoreTrack');
+  const R=26,C=2*Math.PI*R;
+  circ.setAttribute('stroke',sc.stroke);
+  circ.setAttribute('stroke-dasharray',C);
+  circ.setAttribute('stroke-dashoffset',(C*(1-score/100)).toFixed(2));
+  track.setAttribute('stroke',sc.track);
+  document.getElementById('scoreNum').textContent=score;
+  document.getElementById('scoreNum').style.color=sc.stroke;
+  document.getElementById('scoreLtr').textContent=ltr;
+  document.getElementById('scoreLtr').style.color=sc.stroke;
+
+  const rec=score>=80?'Strong buy':score>=65?'Consider buying':score>=50?'Hold — monitor closely':'Avoid';
+  const recColor=score>=80?'#1D9E75':score>=65?'#BA7517':'#D85A30';
+  const cityShort=(p.city||'').split(',')[0].trim()||'this area';
+
+  // Snapshot of the metrics "Add to portfolio" will save — starts as the
+  // rule-based score/rec, gets refreshed with the real AI verdict once
+  // renderAIVerdict() resolves (below), so a save made after that point uses
+  // the real AI score instead of the placeholder.
+  p.lastMetrics={netCF,cap:parseFloat(cap),coc:parseFloat(coc),irr:parseFloat(irr),score,recommendation:rec};
+  document.getElementById('scoreRec').textContent=rec;
+  document.getElementById('scoreRec').style.color=recColor;
+  // This rule-based score/summary is an instant placeholder shown while the
+  // real AI verdict (Claude, via /api/analysis) is generating — renderAIVerdict()
+  // below overwrites all of this once that call resolves. If the AI call fails,
+  // this rule-based version stays up, clearly labeled as such (see scoreConf).
+  document.getElementById('scoreSub').textContent=
+    score>=80?'Strong fundamentals across cash flow, cap rate, and projected appreciation for this property\'s numbers.':
+    score>=65?'Decent investment with some risk factors. Cash flow is manageable but thin. Consider negotiating price down.':
+    'This property does not meet return thresholds. Negative cash flow or poor cap rate detected.';
+  document.getElementById('scoreConf').textContent='Generating AI verdict...';
+  document.getElementById('scoreTags').innerHTML=
+    '<div style="display:flex;flex-direction:column;gap:4px">'+
+    (netCF>0?'<span class="badge bg">Positive cashflow</span>':'<span class="badge br">Negative cashflow</span>')+
+    (p.price<p.zest?'<span class="badge bg">Below value estimate</span>':'<span class="badge ba">At/above value estimate</span>')+
+    // Rental-demand badge used to be a hardcoded "High rental demand" shown
+    // for every property. Now it's driven by the real Census renter share for
+    // this ZIP — and simply omitted when demographics aren't available,
+    // rather than defaulting to a made-up claim.
+    (p.demographics&&typeof p.demographics.renterRate==='number'?
+      (p.demographics.renterRate>=40?'<span class="badge bg">High renter share ('+p.demographics.renterRate+'% — Census)</span>':
+       p.demographics.renterRate>=25?'<span class="badge bb">Moderate renter share ('+p.demographics.renterRate+'% — Census)</span>':
+       '<span class="badge ba">Low renter share ('+p.demographics.renterRate+'% — Census)</span>'):'')+
+    '</div>';
+
+  // Placeholder narrative shown only until the real Claude-generated verdict
+  // arrives (see renderAIVerdict() below, called at the end of buildResults()).
+  // This templated version is NOT AI-generated — it's the same rule-based
+  // logic as the score above, kept only so the tab isn't blank during the
+  // ~1-2s the API call takes.
+  document.getElementById('aiSum').textContent=
+    `This ${(function(){const g=document.getElementById('igoal').value; return /^[A-Z]+$/.test(g)?g:g.toLowerCase();})()} opportunity scores ${score}/100 (${ltr}) — a "${rec}" estimate pending AI review. `+
+    `Monthly cash flow is ${netCF>=0?'positive at +'+fmt(netCF):'negative at '+fmt(netCF)}, with a ${cap}% cap rate and ${coc}% CoC return. `+
+    `The listing is ${p.price<p.zest?((1-p.price/p.zest)*100).toFixed(1)+'% below':'at'} the current value estimate, suggesting ${p.price<p.zest?'room for equity upside':'fair market pricing'}. `+
+    `The projected ${holdYears}-year IRR of ${irr}% is ${parseFloat(irr)>12?'above':'near'} a typical long-term real estate benchmark of ~11%.`;
+
+  // These three used to show fake "Confidence: NN%" numbers with nothing
+  // behind them — cash flow/CoC/IRR are deterministic arithmetic from the
+  // price, rent, rate, and the fixed expense-ratio assumptions above (1.1%
+  // tax, 1% maintenance, 5% vacancy, 8% mgmt fee), not a statistical model
+  // with a real confidence interval. Labeling that as "72% confidence" was
+  // manufacturing precision that didn't exist. Now it says what these
+  // numbers actually are.
+  const CALC_NOTE='Calculated from the inputs above — not a modeled confidence score';
+  document.getElementById('vCF').textContent=(netCF>=0?'+':'')+fmt(netCF);
+  document.getElementById('mcCF').className='mc '+(netCF>=0?'pos':'neg');
+  document.getElementById('confCF').textContent=CALC_NOTE;
+  document.getElementById('vCoC').textContent=coc+'%';
+  document.getElementById('mcCoC').className='mc '+(parseFloat(coc)>=0?'pos':'neg');
+  document.getElementById('confCoC').textContent=CALC_NOTE;
+  document.getElementById('vCap').textContent=cap+'%';
+  document.getElementById('mcCap').className='mc '+(parseFloat(cap)>=0?'pos':'neg');
+  document.getElementById('irrLbl').textContent=holdYears+'-yr IRR';
+  document.getElementById('vIRR').textContent=irr+'%';
+  document.getElementById('mcIRR').className='mc '+(parseFloat(irr)>=0?'pos':'neg');
+  document.getElementById('confIRR').textContent=CALC_NOTE;
+
+  document.getElementById('zEst').textContent=fmt(p.zest);
+  document.getElementById('zList').textContent=fmt(p.price);
+  document.getElementById('zRent').textContent=fmt(p.rent)+'/mo';
+  document.getElementById('zBed').textContent=(p.beds!=null?p.beds+'bd':'N/A')+' / '+(p.baths!=null?p.baths+'ba':'N/A');
+  document.getElementById('zSqft').textContent=p.sqft?p.sqft.toLocaleString()+' sqft':'N/A';
+  // No active listing = no property-specific DOM, but the ZIP average from
+  // RentCast /markets is honest, clearly-labeled context.
+  document.getElementById('zDom').textContent=p.dom!=null?p.dom+' days':
+    (p.marketStats&&p.marketStats.saleDomAvg!=null?'ZIP avg: '+p.marketStats.saleDomAvg+' days (not this property)':'N/A');
+  document.getElementById('zPsf').textContent=p.sqft?'$'+Math.round(p.price/p.sqft)+'/sqft':'N/A';
+  renderComps(p);
+  document.getElementById('zTrend').textContent=p.trend;
+  document.getElementById('fPrice').textContent=fmt(p.price);
+  document.getElementById('fDown').textContent=fmt(down)+' ('+dpPct+'%)';
+  document.getElementById('fLoan').textContent=fmt(loan);
+  document.getElementById('fRate').textContent=rate+'% fixed '+(p.rateLive?'(FRED, wk of '+p.rateDate+')':'(placeholder — live rate unavailable)');
+  document.getElementById('fMort').textContent=fmt(mort)+'/mo';
+  document.getElementById('fType').textContent=p.type;
+  document.getElementById('fYear').textContent=p.yearBuilt;
+  const vsZ=((p.price/p.zest-1)*100).toFixed(1);
+  document.getElementById('fVsZ').innerHTML='<span style="color:'+(p.price<p.zest?'#1D9E75':'#D85A30')+'">'+
+    (p.price<p.zest?vsZ+'% below':'+'+vsZ+'% above')+'</span>';
+
+  document.getElementById('cfRent').textContent='+'+fmt(p.rent);
+  document.getElementById('cfVacLbl').textContent='Vacancy ('+vacPct.toFixed(1)+'%'+(usingRealVacancy?' — ZIP Census rate':' — assumption')+')';
+  document.getElementById('cfVac').textContent='−'+fmt(vac);
+  document.getElementById('cfMgmt').textContent='−'+fmt(mgmt);
+  document.getElementById('cfTaxLbl').textContent=usingRealTax?
+    'Property tax (county record'+(p.taxYear?' '+p.taxYear:'')+')':'Property tax (est. 1.1%)';
+  document.getElementById('cfTax').textContent='−'+fmt(ptax);
+  document.getElementById('cfHoaRow').style.display=hoa>0?'flex':'none';
+  if(hoa>0) document.getElementById('cfHoa').textContent='−'+fmt(hoa);
+  document.getElementById('cfIns').textContent='−'+fmt(ins);
+  document.getElementById('cfMaint').textContent='−'+fmt(maint);
+  document.getElementById('cfMortRow').textContent='−'+fmt(mort);
+  const cfNetEl=document.getElementById('cfNet');
+  cfNetEl.textContent=(netCF>=0?'+':'')+fmt(netCF);
+  cfNetEl.style.color=netCF>=0?'#1D9E75':'#D85A30';
+  document.getElementById('cfEmpty').style.display='none';
+  document.getElementById('cfResults').style.display='block';
+
+  // Rent-growth escalator for the projection: real ZIP rent trend from
+  // RentCast /markets when available, otherwise the old 3.2% national
+  // rule-of-thumb (labeled as such in the Growth forecast card). Clamped to
+  // ±10%/yr so one weird small-sample ZIP trend can't produce a silly chart.
+  const usingRealRentGrowth=!!(p.marketStats&&p.marketStats.rentTrendPctYr!=null);
+  const rentGrowth=usingRealRentGrowth?Math.max(-0.10,Math.min(0.10,p.marketStats.rentTrendPctYr/100)):0.032;
+  const yrs=Array.from({length:holdYears},(_,i)=>'Yr '+(i+1));
+  const annuals=yrs.map((_,i)=>Math.round(netCF*12*Math.pow(1+rentGrowth,i)));
+  document.getElementById('projTitle').textContent=holdYears+'-year projection';
+  // Chart.js loads from a CDN — if it's blocked (ad blocker, network policy, CDN
+  // hiccup) this must not take down the rest of buildResults(). Everything below
+  // this block (demand/exit/tax tabs) depends on execution continuing past here.
+  try{
+    if(typeof Chart==='undefined') throw new Error('Chart.js failed to load');
+    if(chartInst) chartInst.destroy();
+    chartInst=new Chart(document.getElementById('cfChart'),{
+      type:'bar',data:{labels:yrs,datasets:[{label:'Annual cashflow',data:annuals,backgroundColor:annuals.map(v=>v>=0?'#1D9E75':'#D85A30'),borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>(v<0?'-':'')+' $'+Math.abs(Math.round(v/1000))+'k',font:{size:10}},grid:{color:'rgba(128,128,128,0.1)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}
+    });
+  }catch(err){
+    console.warn('Cash flow chart could not render:', err.message);
+    const chartWrap=document.getElementById('cfChart')?.closest('.chart-wrap');
+    if(chartWrap) chartWrap.outerHTML='<div style="font-size:11px;color:var(--color-text-tertiary);padding:20px;text-align:center">Chart unavailable (Chart.js failed to load — check your network/ad blocker). Numbers above are unaffected.</div>';
+  }
+
+  // Real ZIP-level demographics from the Census ACS 5-year estimates (see
+  // lib/census.js) — replaces the old Math.random() buyer/renter placeholder
+  // numbers, which weren't tied to the searched property's actual location at
+  // all. dem is null if the Census lookup failed or the ZIP was unknown; every
+  // field below has an explicit fallback for that case rather than guessing.
+  const dem=p.demographics;
+  const owners=dem?.ownerOccupiedUnits ?? null;
+  const rentersCount=dem?.renterOccupiedUnits ?? null;
+  const income=dem?.medianHouseholdIncome ?? null;
+
+  document.getElementById('dOwners').textContent=owners!=null?owners.toLocaleString():'N/A';
+  document.getElementById('dRenters').textContent=rentersCount!=null?rentersCount.toLocaleString():'N/A';
+  document.getElementById('dIncome').textContent=income!=null?'$'+income.toLocaleString():'N/A';
+  ['dOwnersConf','dRentersConf','dIncomeConf'].forEach(id=>{
+    document.getElementById(id).textContent=dem?'Census ACS5 estimate':'Data unavailable';
+  });
+
+  let demSumText;
+  if(dem){
+    const rentToIncomePct=(income&&p.rent)?((p.rent*12/income)*100).toFixed(1):null;
+    const areaName=dem.name?dem.name.split(',')[0]:null;
+    demSumText=`${areaName?areaName:('ZIP '+(p.zip||dem.zip))} has an estimated population of ${dem.population!=null?dem.population.toLocaleString():'N/A'}. `+
+      `${dem.renterRate!=null?dem.renterRate+'% of occupied housing is renter-occupied':'Renter share unavailable'} vs. ${dem.homeownershipRate!=null?dem.homeownershipRate+'% owner-occupied':'owner share unavailable'}. `+
+      `Median household income is ${income!=null?'$'+income.toLocaleString():'not available'}`+
+      (rentToIncomePct?`, so this property's $${p.rent.toLocaleString()}/mo rent would run about ${rentToIncomePct}% of the median household's income (a common affordability benchmark is 30%).`:'.');
+    // Rent vs the ZIP's real median asking rent (RentCast /markets) — tells
+    // the user whether this property rents above or below its local market.
+    if(p.marketStats&&p.marketStats.rentMedian!=null&&p.rent){
+      const rentDeltaPct=Math.round((p.rent/p.marketStats.rentMedian-1)*100);
+      demSumText+=` The ZIP's median asking rent is $${p.marketStats.rentMedian.toLocaleString()}/mo — this property's estimate sits ${rentDeltaPct===0?'right at the median':(Math.abs(rentDeltaPct)+'% '+(rentDeltaPct>0?'above':'below')+' it')}.`;
+    }
+  }else{
+    demSumText=`Census demographic data is unavailable for ${p.zip?'ZIP '+p.zip:'this area'} right now — showing property-level estimates only.`;
+  }
+  document.getElementById('demSum').textContent=demSumText;
+  // Sale probability used to be the same flat [42,68,84] for every property.
+  // Still a simple model (not real market-velocity data), but now it at least
+  // responds to this property's actual days-on-market when an active listing
+  // exists: a listing sitting 90+ days is objectively less likely to sell in
+  // the next 30 than one listed last week. No DOM -> unadjusted baseline.
+  // DOM basis for the adjustment: this listing's actual DOM when there's an
+  // active listing, otherwise the ZIP's average DOM from RentCast /markets
+  // (area velocity is a legitimate, clearly-labeled proxy).
+  const domBasis=p.dom!=null?p.dom:(p.marketStats&&p.marketStats.saleDomAvg!=null?p.marketStats.saleDomAvg:null);
+  const domAdj=domBasis!=null?Math.max(-18,Math.min(10,Math.round((30-domBasis)/5))):0;
+  ['ps30','ps60','ps90'].forEach((id,i)=>{
+    const pct=Math.max(5,Math.min(97,[42,68,84][i]+domAdj));
+    document.getElementById(id).style.width=pct+'%';
+    document.getElementById(id+'v').textContent=pct+'%';
+  });
+  document.getElementById('psNote').textContent=p.dom!=null?
+    'Modeled estimate, adjusted for this listing\'s actual '+p.dom+' days on market — not full market-velocity data':
+    (domBasis!=null?
+      'Modeled estimate, adjusted for the ZIP\'s average '+domBasis+' days on market (no active listing for this property)':
+      'Modeled estimate — no listing or ZIP DOM data to adjust against');
+  // Rental probability: same treatment the sale bars got — still a simple
+  // model, but now adjusted by the ZIP's real average rental days-on-market
+  // from RentCast /markets (rentals in a 12-DOM ZIP genuinely lease faster
+  // than in a 45-DOM ZIP). No ZIP rental data -> unadjusted baseline.
+  const rentDom=p.marketStats&&p.marketStats.rentDomAvg!=null?p.marketStats.rentDomAvg:null;
+  const rentAdj=rentDom!=null?Math.max(-15,Math.min(12,Math.round((25-rentDom)/2))):0;
+  ['pr7','pr14','pr30'].forEach((id,i)=>{
+    const pct=Math.max(5,Math.min(97,[38,62,87][i]+rentAdj));
+    document.getElementById(id).style.width=pct+'%';
+    document.getElementById(id+'v').textContent=pct+'%';
+  });
+  document.getElementById('prNote').textContent=rentDom!=null?
+    'Modeled estimate, adjusted for the ZIP\'s average '+rentDom+'-day rental time on market (RentCast)':
+    'Modeled estimate — no ZIP rental market data to adjust against';
+  // These four bars used to be invented numbers (82/74/67/38) shown for every
+  // property in the country. They're now REAL Census shares for this ZIP —
+  // and because they're real, they're relabeled to say what they actually
+  // measure (population/household shares) rather than implying a "demand
+  // score" that no data source behind them supports.
+  const d=p.demographics;
+  const segs=d?[
+    ['Adults 25–34 (share of pop.)',d.youngAdultsPct,'#1D9E75'],
+    ['Work from home (share of workers)',d.workFromHomePct,'#7F77DD'],
+    ['Households with children',d.householdsWithChildrenPct,'#378ADD'],
+    ['Age 65+ (share of pop.)',d.seniorsPct,'#BA7517'],
+  ].filter(([,v])=>typeof v==='number'):[];
+  document.getElementById('segBars').innerHTML=segs.length?segs.map(([label,pct,color])=>
+    `<div class="prog-row"><div class="pl" style="width:190px">${label}</div><div class="pw"><div class="pf" style="width:${Math.min(100,pct)}%;background:${color}"></div></div><div class="pp">${pct}%</div></div>`
+  ).join(''):'<div style="font-size:11px;color:var(--color-text-tertiary)">Census composition data unavailable for this ZIP.</div>';
+  document.getElementById('segNote').textContent=segs.length?
+    'Real U.S. Census ACS 5-year shares for this ZIP'+(d.medianAge!=null?' · median age '+d.medianAge:'')+' — population composition, not a demand score.':
+    'Census composition data unavailable for this ZIP.';
+  renderAmenities(p);
+  renderHudFmr(p);
+  document.getElementById('instLevel').innerHTML='<span class="badge bg">High</span>';
+  document.getElementById('instIbuyers').textContent='3 active (Opendoor, Invitation Homes, DeltaRent)';
+  document.getElementById('instPrem').textContent='+2–4% above ask';
+  document.getElementById('instPortfolio').innerHTML='<span class="badge bg">Yes</span>';
+  document.getElementById('demEmpty').style.display='none';
+  document.getElementById('demResults').style.display='block';
+
+  const dep=Math.round(p.price*0.8/27.5);
+  const intDed=Math.round(loan*rate/100*0.85);
+  const taxSave=Math.round((dep+intDed+ptax*12)*0.24);
+  document.getElementById('tDep').textContent=fmt(dep)+'/yr';
+  document.getElementById('tInt').textContent=fmt(intDed)+'/yr';
+  document.getElementById('tProp').textContent=fmt(ptax*12)+'/yr';
+  document.getElementById('tSave').textContent='+'+fmt(taxSave)+'/yr';
+  // Used to be a hardcoded "17.4% (vs 24% base)" — an effective tax rate
+  // can't be computed without the user's actual income, so say so instead of
+  // inventing one.
+  document.getElementById('tEff').textContent='Depends on your income — not calculable here';
+  // Uses the same appRate computed above (real FHFA state CAGR when
+  // available, flat 4.2% fallback otherwise) — previously this line
+  // independently hardcoded 1.042, so it could show a different number than
+  // what val5/eq5 below it were actually computed with.
+  document.getElementById('gAppLbl').textContent=holdYears+'-yr appreciation (est.)';
+  document.getElementById('gValLbl').textContent='Est. value in '+holdYears+' years';
+  document.getElementById('gEqLbl').textContent='Equity after '+holdYears+' years';
+  document.getElementById('gApp').textContent='+'+Math.round((Math.pow(1+appRate,holdYears)-1)*100)+'% total';
+  document.getElementById('gRent').textContent=(rentGrowth>=0?'+':'')+(rentGrowth*100).toFixed(1)+'%';
+  document.getElementById('gRentLbl').textContent='Rent growth (annual)'+(usingRealRentGrowth?' — ZIP trend':' — national assumption');
+  document.getElementById('gVal').textContent=fmt(valH);
+  document.getElementById('gEq').textContent=fmt(eqH);
+  // No fabricated "Confidence: NN%" here — the FHFA number is real historical
+  // data (which doesn't guarantee the future), and the fallback is a
+  // placeholder. Both say exactly what they are.
+  document.getElementById('gAppSource').textContent=usingRealAppreciation?
+    `FHFA House Price Index, ${p.appreciation.state} (${p.appreciation.yearsUsed}-yr trailing avg through ${p.appreciation.throughYear}) — historical trend, not a forecast`:
+    'FHFA data unavailable for this state — using a flat 4.2% national placeholder rate';
+
+  // Replaces what used to be a fully static "Neighborhood score: A− · 82/100"
+  // badge — hardcoded directly in the HTML, never touched by any JS, shown
+  // identically for every property ever searched. This is real data, but
+  // state-level only (FBI UCR has no neighborhood or even county granularity)
+  // — labeled "State crime context," not "Neighborhood score," so it doesn't
+  // trade one kind of fake precision for another.
+  const crime=p.crimeStats;
+  if(crime){
+    const stateCombined=(crime.violentCrimeRatePer1000||0)+(crime.propertyCrimeRatePer1000||0);
+    const natCombined=(crime.nationalViolentCrimeRatePer1000||0)+(crime.nationalPropertyCrimeRatePer1000||0);
+    const deltaPct=natCombined>0?Math.round(((stateCombined/natCombined)-1)*100):null;
+    let badgeClass='ba',badgeText=stateCombined.toFixed(1)+' incidents/1,000 (state, '+crime.year+')';
+    if(deltaPct!=null){
+      badgeClass=deltaPct<=-10?'bg':deltaPct>=10?'br':'ba';
+      badgeText=(deltaPct<=0?Math.abs(deltaPct)+'% below':'+'+deltaPct+'% above')+' national avg';
+    }
+    // Local (police-agency) violent-crime trend, when the FBI has enough
+    // reported years for the agency covering this city. This is the first
+    // sub-state crime signal in the app — a direction of travel, not a rate
+    // (see lib/fbi-crime.js for why per-capita stays state-level).
+    let localHtml='';
+    const L=crime.local;
+    if(L&&L.matched&&L.changePct!=null){
+      const lc=L.changePct<=-5?'bg':L.changePct>=5?'br':'ba';
+      localHtml=` <span class="badge ${lc}" title="${L.agencyName}, violent-crime counts ${L.fromYear}→${L.toYear} (FBI UCR). Count trend for this agency, not a per-capita rate.">${L.changePct>0?'+':''}${L.changePct}% local ${L.fromYear}–${L.toYear}</span>`;
+    }
+    document.getElementById('crimeBadge').innerHTML=
+      `<span class="badge ${badgeClass}" title="FBI UCR estimates, ${crime.state}, ${crime.year} — state-level, not neighborhood-level">${badgeText}</span>`+localHtml;
+  }else{
+    document.getElementById('crimeBadge').innerHTML='<span class="badge" title="FBI crime data unavailable">N/A</span>';
+  }
+  // The five rows below are still a hardcoded, non-property-specific
+  // placeholder (see README "Not covered yet") — none of Market
+  // stability/Rental demand/Liquidity/Rate sensitivity/Appreciation upside
+  // have a real data source behind them yet. "Natural hazard risk" is the
+  // one genuinely real row: FEMA's National Risk Index (see lib/fema.js),
+  // matched to this property's actual county via lat/lon. It's additive,
+  // not a replacement for one of the fake rows — FEMA measures flood/wildfire/
+  // hurricane etc. risk, not financial/market risk, so mapping it onto e.g.
+  // "Liquidity" would just be a different kind of dishonest.
+  const hazard=p.hazardRisk;
+  const hazardPct=hazard&&typeof hazard.riskScore==='number'?hazard.riskScore:null;
+  // Unlike the rows above, a HIGH percentage here is bad (more hazard risk),
+  // so the color scale is inverted relative to the others.
+  const hazardColor=hazardPct==null?'#8a8f98':(hazardPct<40?'#1D9E75':hazardPct<70?'#BA7517':'#D85A30');
+  const hazardConf=hazard?
+    `FEMA National Risk Index · ${hazard.county||'county data'}${hazard.state?', '+hazard.state:''}${hazard.riskRating?' · rated "'+hazard.riskRating+'"':''}`:
+    'FEMA data unavailable for this location';
+
+  // These five rows were hardcoded placeholders (78/84/65/52/70 for every
+  // property ever analyzed). Each is now DERIVED from data the app actually
+  // has, with the source named in the sublabel — and any row whose inputs
+  // are missing shows N/A instead of a number. They're still simple scoring
+  // formulas, not a validated risk model, but every input is real.
+  const band=(v,lo,hi)=>Math.max(5,Math.min(95,Math.round(((v-lo)/(hi-lo))*90+5)));
+  const riskColor=(v)=>v==null?'#8a8f98':(v>=70?'#1D9E75':v>=45?'#BA7517':'#D85A30');
+
+  // Liquidity: how fast this ZIP's listings actually sell (RentCast DOM).
+  const liqDom=p.marketStats&&p.marketStats.saleDomAvg!=null?p.marketStats.saleDomAvg:null;
+  const liquidity=liqDom!=null?band(120-Math.min(120,liqDom),0,120):null;
+  const liquidityConf=liqDom!=null?'ZIP avg '+liqDom+' days on market (RentCast)':'No ZIP DOM data';
+
+  // Rental demand: real renter share of the ZIP + how fast rentals lease.
+  const renterShare=p.demographics&&p.demographics.renterRate!=null?p.demographics.renterRate:null;
+  const rentalDemand=renterShare!=null?
+    Math.max(5,Math.min(95,Math.round(band(renterShare,10,60)*0.7+(rentDom!=null?band(60-Math.min(60,rentDom),0,60):50)*0.3))):null;
+  const rentalDemandConf=renterShare!=null?
+    renterShare+'% renter-occupied (Census)'+(rentDom!=null?' · '+rentDom+'-day avg lease-up':''):'No Census renter data';
+
+  // Market stability: how steady the ZIP's price trend is — a mild positive
+  // trend is the most stable outcome; steep moves in EITHER direction (a
+  // crash or an unsustainable spike) score lower.
+  const trendPct=p.marketStats&&p.marketStats.salePriceTrendPctYr!=null?p.marketStats.salePriceTrendPctYr:null;
+  const stability=trendPct!=null?Math.max(5,Math.min(95,Math.round(95-Math.abs(trendPct-4)*6))):null;
+  const stabilityConf=trendPct!=null?(trendPct>=0?'+':'')+trendPct+'%/yr ZIP price trend (RentCast)':'No ZIP price trend data';
+
+  // Appreciation upside: real FHFA state appreciation.
+  const apprPct=usingRealAppreciation?p.appreciation.annualAppreciationPct:null;
+  const upside=apprPct!=null?band(apprPct,0,10):null;
+  const upsideConf=apprPct!=null?apprPct+'%/yr FHFA state appreciation':'No FHFA data for this state';
+
+  // Rate sensitivity: how exposed THIS deal is to rate moves — driven by how
+  // much of the rent the mortgage payment eats and how leveraged it is.
+  const mortShare=p.rent>0?mort/p.rent:null;
+  const rateSens=mortShare!=null?Math.max(5,Math.min(95,Math.round(95-(mortShare*70)-(dpPct<20?10:0)))):null;
+  const rateSensConf=mortShare!=null?
+    'Mortgage = '+Math.round(mortShare*100)+'% of rent at '+rate+'% (FRED), '+dpPct+'% down':'N/A';
+
+  const risks=[
+    ['Market stability',stability,riskColor(stability),stabilityConf],
+    ['Rental demand',rentalDemand,riskColor(rentalDemand),rentalDemandConf],
+    ['Liquidity',liquidity,riskColor(liquidity),liquidityConf],
+    ['Rate sensitivity',rateSens,riskColor(rateSens),rateSensConf],
+    ['Appreciation upside',upside,riskColor(upside),upsideConf],
+    ['Natural hazard risk',hazardPct,hazardColor,hazardConf],
+  ];
+  document.getElementById('riskBars').innerHTML=risks.map(([label,pct,color,conf])=>
+    `<div class="prog-row" style="align-items:flex-start"><div class="pl" style="width:130px">${label}</div><div class="pw" style="margin-top:5px"><div class="pf" style="width:${pct??0}%;background:${color}"></div></div><div class="pp">${pct!=null?pct+'%':'N/A'}</div><div class="pc2" style="width:210px;line-height:1.4">${conf}</div></div>`
+  ).join('');
+  document.getElementById('taxEmpty').style.display='none';
+  document.getElementById('taxResults').style.display='block';
+
+  const flipProfit=Math.round((p.zest-p.price)*0.6-18000);
+
+  // BRRRR's viability bump is tied to whether there's real equity spread to
+  // refinance against (value estimate above purchase price) instead of an
+  // arbitrary flat +8 applied to every property regardless of its numbers.
+  const hasEquitySpread=p.zest>p.price;
+  const brrrScore=Math.min(95,score+(hasEquitySpread?10:2));
+
+  // Short-term rental gross rent used to be a flat "$2,800–3,600/mo" shown for
+  // every property regardless of address — obviously wrong for anything that
+  // isn't priced like the original Indianapolis prototype. This is now a rough
+  // rule-of-thumb range (1.5x–2.2x this property's actual long-term rent
+  // estimate), clearly labeled as a heuristic, not real STR market data
+  // (occupancy rates, ADR comps, etc. — Investates doesn't have an STR data
+  // source yet).
+  const strGrossLow=Math.round(p.rent*1.5);
+  const strGrossHigh=Math.round(p.rent*2.2);
+
+  const strategies=[
+    {name:'Buy & hold',score:score,color:score>=75?'#1D9E75':'#BA7517',roi:coc+'% CoC · '+irr+'% IRR',desc:'Steady rental income with long-term appreciation. Best fit for this market and property type.',rec:score>=75,bar:score,conf:'Modeled from this property\'s computed cash flow, cap rate, and IRR'},
+    {name:'BRRRR strategy',score:brrrScore,color:'#1D9E75',roi:'Estimated refi in yr 2–3 · Pull '+(fmt(Math.round(down*0.7)))+' equity',desc:(hasEquitySpread?'Price below the current value estimate leaves equity spread to support a refinance cycle. ':'Price is at or above the current value estimate, leaving little equity spread for a near-term refinance. ')+'Rent-to-value ratio still matters most here — verify actual rehab scope before counting on this exit.',rec:false,bar:brrrScore,conf:'Modeled — assumes a yr 2–3 refinance at the current value estimate'},
+    {name:'Fix & flip',score:Math.max(20,Math.round(flipProfit>0?68:35)),color:flipProfit>0?'#BA7517':'#D85A30',roi:'Est. profit: '+(flipProfit>0?'+':'')+fmt(flipProfit)+' (assumes ~$18k rehab)',desc:flipProfit>0?'Moderate flip potential. Thin margin — only viable with a disciplined rehab budget near the ~$18k assumed above.':'Below-market spread makes a flip risky at this price. Better suited to a hold strategy.',rec:false,bar:Math.max(20,Math.round(flipProfit>0?68:35)),conf:'Modeled from the value-estimate-minus-price spread, less an assumed rehab cost'},
+    {name:'Short-term rental',score:Math.round(score*0.88),color:'#7F77DD',roi:'Est. $'+strGrossLow.toLocaleString()+'–'+strGrossHigh.toLocaleString()+'/mo gross (1.5–2.2x this property\'s long-term rent estimate)',desc:'Rough STR potential scaled to this property\'s actual rent estimate — not sourced from real short-term rental market data (occupancy, nightly rate comps). Short-term rental zoning and licensing vary by city and neighborhood — verify local ordinances before pursuing this strategy.',rec:false,bar:Math.round(score*0.88),conf:'Rule-of-thumb estimate, not real STR market data'}
+  ];
+  const recStrat=strategies.reduce((a,b)=>a.score>b.score?a:b);
+  // Instant rule-based placeholder (highest-scoring strategy) shown while the
+  // real AI recommendation loads — renderExitAI() overwrites it on success,
+  // or relabels it honestly if the AI call fails. The old version of this
+  // text also always claimed "BRRRR is a strong secondary option" regardless
+  // of BRRRR's actual score — dropped.
+  document.getElementById('exitAI').textContent=
+    `Based on this property's fundamentals, ${recStrat.name} is the strongest exit strategy (score: ${recStrat.score}/100). ${recStrat.desc}`;
+  document.getElementById('exitGrid').innerHTML=strategies.map(s=>
+    `<div class="exit-card"${s.rec?' style="border:1.5px solid #1D9E75"':''}>
+      <div class="exit-header">
+        <div class="exit-name">${s.name}${s.rec?' <span class="recommended-tag">AI pick</span>':''}</div>
+        <div class="exit-score" style="color:${s.color}">${s.score}<span style="font-size:11px;font-weight:400;color:var(--color-text-secondary)">/100</span></div>
+      </div>
+      <div class="exit-desc">${s.roi}</div>
+      <div class="exit-desc" style="margin-top:4px">${s.desc}</div>
+      <div class="exit-bar" style="background:${s.color};width:${s.bar}%;max-width:100%"></div>
+      <div style="font-size:10px;color:var(--color-text-tertiary);margin-top:4px">${s.conf}</div>
+    </div>`
+  ).join('');
+  document.getElementById('exitEmpty').style.display='none';
+  document.getElementById('exitResults').style.display='block';
+
+  renderInvestorMatches(p);
+
+  // "Add to portfolio" only makes sense once there's a real analysis to
+  // save — hidden by default, shown here at the end of a successful run.
+  document.getElementById('addPortfolioBtn').style.display='block';
+  document.getElementById('addPortfolioNote').style.display='none';
+
+  // Both AI requests fire in the background — they don't block any of the
+  // rendering above, and each overwrites its rule-based placeholder once it
+  // resolves. Debounced: changing down payment / hold period / strategy
+  // re-runs buildResults() instantly (all the deterministic numbers update
+  // right away), but the two Gemini calls only fire after the inputs have
+  // been stable for a moment — so flipping through options doesn't burn a
+  // free-tier request per click.
+  scheduleAIRefresh(()=>{
+    renderAIVerdict(p,{netCF,cap,coc,irr,dpPct,holdYears},seq);
+    renderExitAI(p,{
+      strategies:strategies.map(s=>({name:s.name,score:s.score,keyNumbers:s.roi})),
+      monthlyCashFlow:netCF,capRatePct:parseFloat(cap),cashOnCashPct:parseFloat(coc),
+      irrPct:parseFloat(irr),holdYears,flipProfitEstimate:flipProfit,
+      strGrossRange:[strGrossLow,strGrossHigh],hasEquitySpread,
+    },seq);
+  });
+}
+
+let aiDebounceTimer=null;
+function scheduleAIRefresh(fn){
+  clearTimeout(aiDebounceTimer);
+  aiDebounceTimer=setTimeout(fn,900);
+}
+
+// Guards against the stale-response race: renderAIVerdict/renderExitAI are
+// async, so without this, analyzing property B (or changing inputs) while
+// property A's AI request was still in flight could let A's late response
+// land AFTER B's and silently overwrite B's score/recommendation with A's.
+// Every buildResults() bumps the sequence; any AI response whose captured
+// sequence no longer matches is thrown away.
+let analysisSeq=0;
+
+// Re-runs the full analysis with the current sidebar inputs — wired to the
+// down payment, hold period, and strategy controls. Previously changing any
+// of them did nothing until the user manually clicked "Run AI analysis"
+// again, which read as a bug (it was: the hold period wasn't even used).
+function rerunIfAnalyzed(){
+  if(!propData||!propData.lastMetrics) return;
+  if(document.getElementById('resultsEl').style.display!=='block') return;
+  // Pick up an edited purchase price too, same as clicking "Run AI analysis".
+  const po=parseFloat(document.getElementById('priceInput').value);
+  if(po>0) propData.price=po;
+  buildResults();
+}
+
+// Calls /api/analysis (Claude Haiku) with the metrics already computed above
+// and replaces the rule-based deal-score placeholder with a real AI-generated
+// investment score, recommendation, and narrative. If this fails for any
+// reason (missing key, network, rate limit), the rule-based placeholder set
+// earlier in buildResults() stays on screen — just relabeled so it's never
+// mistaken for an actual AI verdict.
+async function renderAIVerdict(p,m,seq){
+  try{
+    const res=await fetch('/api/analysis',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        address:p.addr,
+        city:p.city,
+        zip:p.zip,
+        propertyType:p.type,
+        beds:p.beds,
+        baths:p.baths,
+        sqft:p.sqft,
+        yearBuilt:p.yearBuilt,
+        price:p.price,
+        valueEstimate:p.zest,
+        rentEstimate:p.rent,
+        hasActiveListing:p.priceSource==='active listing',
+        daysOnMarket:p.dom,
+        mortgageRatePct:p.rate,
+        downPaymentPct:m.dpPct,
+        monthlyCashFlow:m.netCF,
+        capRatePct:parseFloat(m.cap),
+        cashOnCashPct:parseFloat(m.coc),
+        irrPct:parseFloat(m.irr),
+        holdYears:m.holdYears,
+        demographics:p.demographics||null,
+        // The verdict used to ignore these four real data sources entirely —
+        // now the model weighs whichever are available for this property.
+        appreciation:p.appreciation||null,
+        hazardRisk:p.hazardRisk||null,
+        crimeStats:p.crimeStats||null,
+        hudFmr:(p.hudFmr&&p.hudFmr.matched)?p.hudFmr:null,
+        zipMarketStats:p.marketStats||null,
+        investmentGoal:document.getElementById('igoal').value,
+      }),
+    });
+    const data=await res.json();
+    if(seq!==analysisSeq) return; // stale response — a newer analysis superseded this one
+    if(!res.ok) throw new Error(data.error||'AI analysis request failed');
+
+    const sc=scoreColor(data.score);
+    const ltr=scoreLetter(data.score);
+    const R=26,C=2*Math.PI*R;
+    const circ=document.getElementById('scoreArc');
+    const track=document.getElementById('scoreTrack');
+    circ.setAttribute('stroke',sc.stroke);
+    circ.setAttribute('stroke-dasharray',C);
+    circ.setAttribute('stroke-dashoffset',(C*(1-data.score/100)).toFixed(2));
+    track.setAttribute('stroke',sc.track);
+    document.getElementById('scoreNum').textContent=data.score;
+    document.getElementById('scoreNum').style.color=sc.stroke;
+    document.getElementById('scoreLtr').textContent=ltr;
+    document.getElementById('scoreLtr').style.color=sc.stroke;
+
+    const recColor=data.recommendation==='Strong buy'?'#1D9E75':data.recommendation==='Avoid'?'#D85A30':'#BA7517';
+    document.getElementById('scoreRec').textContent=data.recommendation;
+    document.getElementById('scoreRec').style.color=recColor;
+    document.getElementById('scoreSub').textContent=data.summary;
+    document.getElementById('aiSum').textContent=data.summary;
+    document.getElementById('scoreConf').textContent='Investates AI verdict — not a substitute for professional due diligence';
+
+    // Refresh the portfolio snapshot with the real AI score/recommendation —
+    // if the user clicks "Add to portfolio" after this resolves, it should
+    // save the real verdict, not the rule-based placeholder it started as.
+    if(p.lastMetrics) p.lastMetrics={...p.lastMetrics,score:data.score,recommendation:data.recommendation};
+
+    if(data.riskFactors&&data.riskFactors.length){
+      document.getElementById('scoreTags').innerHTML='<div style="display:flex;flex-direction:column;gap:4px">'+
+        data.riskFactors.map(r=>'<span class="badge ba">'+r+'</span>').join('')+'</div>';
+    }
+  }catch(err){
+    if(seq!==analysisSeq) return; // stale failure — don't relabel the current analysis
+    console.warn('AI analysis unavailable, keeping rule-based placeholder:',err.message);
+    document.getElementById('scoreConf').textContent='Rule-based estimate (AI verdict unavailable) · Based on RentCast data + computed returns';
+  }
+}
+
+// Real AI exit-strategy recommendation (POST /api/exit-analysis, Gemini).
+// The rule-based highest-score text set in buildResults() stays on screen
+// until this resolves; on failure it's relabeled so it's never mistaken for
+// an actual AI recommendation.
+async function renderExitAI(p,m,seq){
+  const el=document.getElementById('exitAI');
+  try{
+    const res=await fetch('/api/exit-analysis',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        address:p.addr,city:p.city,price:p.price,valueEstimate:p.zest,
+        rentEstimate:p.rent,investmentGoal:document.getElementById('igoal').value,
+        holdPeriod:document.getElementById('hperiod').value,
+        ...m,
+        // Map UI card names to the strategy vocabulary the prompt enforces.
+        strategies:m.strategies.map(s=>({...s,name:s.name==='Buy & hold'?'Long-term hold':s.name==='BRRRR strategy'?'BRRRR':s.name})),
+      }),
+    });
+    const data=await res.json();
+    if(seq!==analysisSeq) return; // stale response — a newer analysis superseded this one
+    if(!res.ok) throw new Error(data.error||'AI exit analysis failed');
+    el.textContent=data.summary;
+    // Move the "AI pick" tag to whichever strategy the AI actually chose.
+    const uiName=data.recommendedStrategy==='Long-term hold'?'Buy & hold':data.recommendedStrategy==='BRRRR'?'BRRRR strategy':data.recommendedStrategy;
+    document.querySelectorAll('#exitGrid .exit-card').forEach(card=>{
+      const nameEl=card.querySelector('.exit-name');
+      const isPick=nameEl.textContent.trim().startsWith(uiName);
+      card.style.border=isPick?'1.5px solid #1D9E75':'';
+      const tag=nameEl.querySelector('.recommended-tag');
+      if(tag&&!isPick) tag.remove();
+      if(isPick&&!nameEl.querySelector('.recommended-tag')) nameEl.insertAdjacentHTML('beforeend',' <span class="recommended-tag">AI pick</span>');
+    });
+  }catch(err){
+    if(seq!==analysisSeq) return; // stale failure — don't relabel the current analysis
+    console.warn('AI exit analysis unavailable, keeping rule-based text:',err.message);
+    el.textContent+=' (Rule-based estimate — AI recommendation unavailable.)';
+  }
+}
+
+// Real AI market-intelligence summary (GET /api/market-summary) generated
+// from the same live FHFA/FBI/Census data the two ranking cards below it
+// use. The illustrative sample text in the HTML stays (with its label) if
+// this fails — e.g. no GEMINI_API_KEY or upstream data source down.
+let marketSummaryLoaded=false;
+async function loadMarketSummary(){
+  if(marketSummaryLoaded) return;
+  try{
+    const res=await fetch('/api/market-summary');
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Market summary failed');
+    document.getElementById('marketIntelLbl').innerHTML='<i class="ti ti-globe" aria-hidden="true" style="font-size:10px"></i> Market intelligence <span style="font-weight:400;opacity:0.7">(AI summary of the live data below)</span>';
+    document.getElementById('marketIntelText').textContent=data.summary;
+    marketSummaryLoaded=true;
+  }catch(err){
+    console.warn('AI market summary unavailable, keeping illustrative sample:',err.message);
+  }
+}
+
+function fmtShort(n){
+  if(n>=1000000) return '$'+(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  return '$'+Math.round(n/1000)+'k';
+}
+
+// Investor marketplace is still a preview with no real investor pool behind
+// it (see README) — but the profiles below now scale to the actual property
+// instead of always showing hardcoded Indianapolis budgets/regions regardless
+// of what address was searched.
+function renderInvestorMatches(p){
+  const cityShort=(p.city||'').split(',')[0].trim()||'this area';
+  const stateAbbr=(p.city.match(/,\s*([A-Z]{2})\b/)||[])[1]||'';
+  const regionTag=stateAbbr?stateAbbr+' focus':'Regional focus';
+  const price=p.price;
+  const rent=p.rent;
+  const bedsBathsTag=(p.beds!=null&&p.baths!=null)?p.beds+'BD/'+p.baths+'BA+':'Beds/baths N/A';
+  const bedsTag=p.beds!=null?p.beds+'BD+':'Beds N/A';
+
+  const investors=[
+    {
+      name:'Meridian Capital Partners',
+      sub:'Institutional · '+cityShort+' · Cash buyer',
+      match:92,
+      tags:['Budget '+fmtShort(price*0.7)+'–'+fmtShort(price*1.3),p.type+' preferred','5+ yr hold',regionTag],
+      cls:['bb','bg','ba','bp']
+    },
+    {
+      name:'Private buyer — pre-approved',
+      sub:'Pre-approved · Closing in 45 days · Primary residence',
+      match:85,
+      tags:['Budget '+fmtShort(price*0.9)+'–'+fmtShort(price*1.1),bedsBathsTag,'Good schools'],
+      cls:['bb','bg','ba']
+    },
+    {
+      name:'DeltaRent LLC',
+      sub:'Portfolio investor · Acquiring '+p.type+' · Cash offer available',
+      match:79,
+      tags:['Budget '+fmtShort(price*0.65)+'–'+fmtShort(price*1.15),'CoC target 5%+',regionTag,'Buy & hold'],
+      cls:['bb','bg','ba','bp']
+    },
+    {
+      name:'Long-term tenant lead',
+      sub:'Renter · 3-yr stable employment · Move-in ready',
+      match:73,
+      tags:['Rent '+fmtShort(rent*0.85)+'–'+fmtShort(rent*1.15)+'/mo',bedsTag,'Pets OK'],
+      cls:['bb','bg','ba']
+    }
+  ];
+
+  document.getElementById('investorList').innerHTML=investors.map(inv=>
+    '<div class="investor-card"><div class="inv-header"><div><div class="inv-name">'+inv.name+'</div>'+
+    '<div style="font-size:11px;color:var(--color-text-secondary)">'+inv.sub+'</div></div>'+
+    '<div class="inv-match"><div class="inv-match-bar"><div class="inv-match-fill" style="width:'+inv.match+'%"></div></div>'+
+    '<span style="font-weight:500;color:#1D9E75">'+inv.match+'%</span></div></div>'+
+    '<div class="inv-tags">'+inv.tags.map((t,i)=>'<span class="badge '+inv.cls[i]+'">'+t+'</span>').join('')+'</div></div>'
+  ).join('');
+}
+
+fetchProperty();
+</script>
+</body>
+</html>
